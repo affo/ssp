@@ -24,6 +24,20 @@ func (g *Graph) add(a {{.ArchClass}}) {
 	g.roots[a.To()] = false
 }
 
+func (g Graph) Roots() (roots []{{.NodeClass}}) {
+	for n, root := range g.roots {
+		if root {
+			roots = append(roots, n)
+		}
+	}
+	sort.Sort(nodesByRepr(roots))
+	return roots
+}
+
+func (g Graph) Adjacents(n {{.NodeClass}}) []{{.ArchClass}} {
+	return g.adjacency[n]
+}
+
 // TODO(affo): more walking strategy and complete visitor class.
 type Visitor func(a {{.ArchClass}})
 
