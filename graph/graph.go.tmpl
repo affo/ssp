@@ -1,0 +1,159 @@
+package graph
+
+import (
+	"context"
+	"fmt"
+	"sort"
+	"strings"
+)
+
+type graphContextKey int
+
+const key graphContextKey = iota
+
+type Graph struct {
+	adjacency map[{{.NodeClass}}][]{{.ArchClass}}
+	roots     map[{{.NodeClass}}]bool
+}
+
+func (g *Graph) add(a {{.ArchClass}}) {
+	g.adjacency[a.From()] = append(g.adjacency[a.From()], a)
+	if _, ok := g.roots[a.From()]; !ok {
+		g.roots[a.From()] = true
+	}
+	g.roots[a.To()] = false
+}
+
+// TODO(affo): more walking strategy and complete visitor class.
+type Visitor func(a {{.ArchClass}})
+
+type nodesByRepr []{{.NodeClass}}
+
+func nodeToString(n {{.NodeClass}}) string {
+	return fmt.Sprintf("%v", n)
+}
+
+func (n nodesByRepr) Len() int {
+	return len(n)
+}
+
+func (n nodesByRepr) Less(i, j int) bool {
+	return strings.Compare(nodeToString(n[i]), nodeToString(n[j])) < 0
+}
+
+func (n nodesByRepr) Swap(i, j int) {
+	n[i], n[j] = n[j], n[i]
+}
+
+func (g Graph) Walk(v Visitor) {
+	// Walk in predictable order.
+	keys := make(nodesByRepr, 0, len(g.adjacency))
+	for n := range g.adjacency {
+		keys = append(keys, n)
+	}
+	sort.Sort(keys)
+	for _, from := range keys {
+		adj := g.adjacency[from]
+		for _, a := range adj {
+			v(a)
+		}
+	}
+}
+
+func (g Graph) String() string {
+	sb := strings.Builder{}
+	g.Walk(func(a {{.ArchClass}}) {
+		sb.WriteString(fmt.Sprintf("%v", a))
+		sb.WriteRune('\n')
+	})
+	return sb.String()
+}
+
+func getGraph(ctx context.Context) *Graph {
+	return ctx.Value(key).(*Graph)
+}
+
+func GetGraph(ctx context.Context) Graph {
+	return *ctx.Value(key).(*Graph)
+}
+
+func setGraph(ctx context.Context, g Graph) context.Context {
+	return context.WithValue(ctx, key, &g)
+}
+
+func Context() context.Context {
+	ctx := context.Background()
+	ctx = setGraph(ctx, Graph{
+		adjacency: make(map[{{.NodeClass}}][]{{.ArchClass}}),
+		roots:     make(map[{{.NodeClass}}]bool),
+	})
+	return ctx
+}
+
+type {{.NodeClass}} interface {
+	Out() {{.ArchClass}}
+}
+
+type {{.ArchClass}} interface {
+	From() {{.NodeClass}}
+	To() {{.NodeClass}}
+	Connect(ctx context.Context, node {{.NodeClass}} {{range .ArchFields}}, {{.Name}} {{.Type}}{{end}}) {{.NodeClass}}
+	{{range .ArchFields -}}
+	  {{title .Name}}() {{.Type}}
+  {{end}}
+}
+
+type arch struct {
+	from Node
+	to   Node
+	{{range .ArchFields -}}
+	  {{.Name}} {{.Type}}
+	{{end}}
+}
+
+func New{{.ArchClass}}(from Node) {{.ArchClass}} {
+	return &arch{
+	  from: from,
+	}
+}
+
+func (a *arch) From() Node {
+	return a.from
+}
+
+func (a *arch) To() Node {
+	return a.to
+}
+
+func (a *arch) Connect(ctx context.Context, node Node {{range .ArchFields}}, {{.Name}} {{.Type}}{{end}}) Node {
+	g := getGraph(ctx)
+	clone := &arch{
+	  from: a.from,
+	  to: node,
+	  {{range .ArchFields -}}
+      {{.Name}}: {{.Name}},
+    {{- end}}
+	}
+	g.add(clone)
+	return node
+}
+
+func (a *arch) String() string {
+	sb := strings.Builder{}
+  	sb.WriteString(fmt.Sprintf("%v -> %v [", a.from, a.to))
+  	{{range $i, $e := .ArchFields -}}
+  	  {{- if eq $i 0 -}}
+  	    sb.WriteString(fmt.Sprintf("{{$e.Name}}: %v", a.{{$e.Name}}))
+  	  {{else -}}
+  	    sb.WriteString(fmt.Sprintf(", {{$e.Name}}: %v", a.{{$e.Name}}))
+  	  {{end -}}
+  	{{- end -}}
+  	sb.WriteRune(']')
+  	return sb.String()
+}
+
+{{range .ArchFields -}}
+func (a *arch) {{title .Name}}() {{.Type}} {
+  return a.{{.Name}}
+}
+{{end}}

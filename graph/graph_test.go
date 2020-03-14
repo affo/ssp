@@ -1,52 +1,72 @@
 package graph
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-type node struct {
-	ID string
-}
-
-func (n node) Out() Arch {
-	return NewArch(n)
-}
-
-func (n node) String() string {
-	return fmt.Sprintf("test node %s", n.ID)
-}
-
 func Test_NewGraph(t *testing.T) {
 	ctx := Context()
-	n1 := node{}
-	n2 := node{}
-	out := n1.Out().Connect(ctx, n2).Out()
+	ns := make([]Node, 8)
+	for i := 0; i < len(ns); i++ {
+		ns[i] = BaseNode{ID: strconv.FormatInt(int64(i), 10)}
+	}
+
+	o := ns[0].Out().Connect(ctx, ns[1], "").Out()
+	// Multiple out.
+	o.Connect(ctx, ns[2], "")
+	o.Connect(ctx, ns[3], "")
+	// Multiple in.
+	ns[2].Out().Connect(ctx, ns[4], "")
+	ns[3].Out().Connect(ctx, ns[4], "")
+	ns[4].Out().Connect(ctx, ns[5], "")
 	g := GetGraph(ctx)
-	if diff := cmp.Diff(n1, g.arches[0].From()); diff != "" {
+
+	// Disconnected piece.
+	ns[6].Out().Connect(ctx, ns[7], "")
+
+	if diff := cmp.Diff(map[Node]bool{
+		ns[0]: true,
+		ns[6]: true,
+		ns[1]: false,
+		ns[2]: false,
+		ns[3]: false,
+		ns[4]: false,
+		ns[5]: false,
+		ns[7]: false,
+	}, g.roots); diff != "" {
 		t.Errorf("unexpected node -want/+got:\n\t%s", diff)
 	}
-	if diff := cmp.Diff(n2, g.arches[0].To()); diff != "" {
-		t.Errorf("unexpected node -want/+got:\n\t%s", diff)
+
+	got := make(map[Node][]Node)
+	for from, arches := range g.adjacency {
+		for _, arch := range arches {
+			got[from] = append(got[from], arch.To())
+		}
 	}
-	if diff := cmp.Diff(n2, out.From()); diff != "" {
+
+	if diff := cmp.Diff(map[Node][]Node{
+		ns[0]: {ns[1]},
+		ns[1]: {ns[2], ns[3]},
+		ns[2]: {ns[4]},
+		ns[3]: {ns[4]},
+		ns[4]: {ns[5]},
+		ns[6]: {ns[7]},
+	}, got); diff != "" {
 		t.Errorf("unexpected node -want/+got:\n\t%s", diff)
-	}
-	if sink := out.To(); sink != nil {
-		t.Errorf("unexpected nil sink node:\n\t%v", sink)
 	}
 }
 
 func Test_String(t *testing.T) {
 	ctx := Context()
-	node{ID: "1"}.
-		Out().Connect(ctx, node{ID: "2"}).
-		Out().Connect(ctx, node{ID: "3"})
+	BaseNode{ID: "1"}.
+		Out().Connect(ctx, BaseNode{ID: "2"}, "arch12").
+		Out().Connect(ctx, BaseNode{ID: "3"}, "arch23")
 	g := GetGraph(ctx)
-	want := `test node 1 -> test node 2
-test node 2 -> test node 3
+	want := `1 -> 2 [name: arch12]
+2 -> 3 [name: arch23]
 `
 	if diff := cmp.Diff(want, g.String()); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
@@ -55,12 +75,41 @@ test node 2 -> test node 3
 
 func Test_MultipleOut(t *testing.T) {
 	ctx := Context()
-	o := node{ID: "1"}.Out()
-	o.Connect(ctx, node{ID: "2"})
-	o.Connect(ctx, node{ID: "3"})
+	o := BaseNode{ID: "1"}.Out()
+	o.Connect(ctx, BaseNode{ID: "2"}, "")
+	o.Connect(ctx, BaseNode{ID: "3"}, "")
 	g := GetGraph(ctx)
-	want := `test node 1 -> test node 2
-test node 1 -> test node 3
+	want := `1 -> 2 [name: ]
+1 -> 3 [name: ]
+`
+	if diff := cmp.Diff(want, g.String()); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
+	}
+}
+
+func Test_MultipleIn(t *testing.T) {
+	ctx := Context()
+	sink := BaseNode{ID: "sink"}
+	BaseNode{ID: "1"}.Out().Connect(ctx, sink, "")
+	BaseNode{ID: "2"}.Out().Connect(ctx, sink, "")
+	g := GetGraph(ctx)
+	want := `1 -> sink [name: ]
+2 -> sink [name: ]
+`
+	if diff := cmp.Diff(want, g.String()); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
+	}
+}
+
+func Test_Cycle(t *testing.T) {
+	ctx := Context()
+	n1 := BaseNode{ID: "1"}
+	n2 := BaseNode{ID: "2"}
+	n1.Out().Connect(ctx, n2, "")
+	n2.Out().Connect(ctx, n1, "")
+	g := GetGraph(ctx)
+	want := `1 -> 2 [name: ]
+2 -> 1 [name: ]
 `
 	if diff := cmp.Diff(want, g.String()); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
