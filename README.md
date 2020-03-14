@@ -5,5 +5,7 @@
 __TODO__
 
  - [x] graph builder lib
- - [ ] walk graph
- - [ ] abstractions on top
+ - [x] walk graph
+ - [x] abstractions on top
+ - [ ] generate graph as command?
+ - [ ] serious engine
