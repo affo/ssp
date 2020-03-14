@@ -22,10 +22,10 @@ func Test_NewGraph(t *testing.T) {
 	ns[2].Out().Connect(ctx, ns[4], "")
 	ns[3].Out().Connect(ctx, ns[4], "")
 	ns[4].Out().Connect(ctx, ns[5], "")
-	g := GetGraph(ctx)
-
 	// Disconnected piece.
 	ns[6].Out().Connect(ctx, ns[7], "")
+
+	g := GetGraph(ctx)
 
 	if diff := cmp.Diff(map[Node]bool{
 		ns[0]: true,

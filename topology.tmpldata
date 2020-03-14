@@ -1,0 +1,8 @@
+{
+  "Package": "ssp",
+  "NodeClass": "Node",
+	"ArchClass": "Stream",
+	"ArchFields": [
+	  {"Name": "steer", "Type": "Steer"}
+	]
+}
