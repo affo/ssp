@@ -5,6 +5,7 @@ import "github.com/affo/ssp/values"
 type DataStream interface {
 	More() bool
 	Next() values.Value
+	Type() values.Type
 }
 
 type sliceStream struct {
@@ -36,16 +37,26 @@ func (s *sliceStream) Next() values.Value {
 	return v
 }
 
-type emptyStream struct{}
+func (s *sliceStream) Type() values.Type {
+	return values.Int
+}
+
+type emptyStream struct {
+	t values.Type
+}
+
+func NewEmptyStream(t values.Type) *emptyStream {
+	return &emptyStream{t: t}
+}
 
 func (e emptyStream) More() bool {
 	return false
 }
 
 func (e emptyStream) Next() values.Value {
-	panic("next when no more")
+	panic("empty stream does not have next element")
 }
 
-func EmptyStream() DataStream {
-	return emptyStream{}
+func (e emptyStream) Type() values.Type {
+	return e.t
 }

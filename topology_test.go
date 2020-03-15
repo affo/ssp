@@ -7,6 +7,28 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+var _ Node = (*BaseNode)(nil)
+
+type BaseNode struct {
+	ID string
+}
+
+func (n BaseNode) Out() Stream {
+	return NewStream(n)
+}
+
+func (n BaseNode) In(ds DataStream) {
+	panic("implement me")
+}
+
+func (n BaseNode) Do(collector Collector) error {
+	panic("implement me")
+}
+
+func (n BaseNode) String() string {
+	return n.ID
+}
+
 func Test_NewTopology(t *testing.T) {
 	ctx := Context()
 	ns := make([]Node, 8)
