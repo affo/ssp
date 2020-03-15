@@ -1,12 +1,14 @@
 package ssp
 
+import "github.com/affo/ssp/values"
+
 type Steer interface {
-	Assign(v Value, buckets []interface{}) (bucket int)
+	Assign(v values.Value, buckets []interface{}) (bucket int)
 }
 
 type fixedSteer struct{}
 
-func (r fixedSteer) Assign(v Value, buckets []interface{}) (bucket int) {
+func (r fixedSteer) Assign(v values.Value, buckets []interface{}) (bucket int) {
 	return 0
 }
 

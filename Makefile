@@ -1,6 +1,7 @@
 generate:
 	go generate ./graph
 	go generate ./naive
+	go generate ./values
 	go generate ./
 
 test:

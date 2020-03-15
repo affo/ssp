@@ -1,0 +1,106 @@
+package values
+
+import (
+	"fmt"
+)
+
+type Type int
+
+const (
+	{{range $i, $e := . -}}
+    {{- if eq $i 0 -}}
+      {{title .}} Type = iota
+    {{else -}}
+      {{title .}}
+    {{end -}}
+  {{- end}}
+)
+
+type Value interface {
+	Type() Type
+	Get() interface{}
+	IsNull() bool
+	{{range . -}}
+    {{title .}}() {{.}}
+  {{end}}
+}
+
+{{range $i, $e := . -}}
+type {{$e}}Value struct {
+  v {{$e}}
+}
+
+func (v {{$e}}Value) Type() Type {
+  return {{title .}}
+}
+
+func (v {{$e}}Value) Get() interface{} {
+  return v.v
+}
+
+func (v {{$e}}Value) IsNull() bool {
+  return false
+}
+
+{{range $}}
+{{if ne . "string"}}
+func (v {{$e}}Value) {{title .}}() {{.}} {
+  {{if eq $e . -}}
+  return v.v
+  {{- else -}}
+  panic("cannot get {{.}} out of {{$e}}")
+  {{- end}}
+}
+{{end}}
+{{end}}
+
+func (v {{$e}}Value) String() string {
+  return fmt.Sprintf("%v", v.Get())
+}
+{{end}}
+
+func NewValue(v interface{}) Value {
+	if v == nil {
+		panic("cannot create value from nil")
+	}
+	switch v := v.(type) {
+	{{- range . -}}
+	case {{.}}:
+		return {{.}}Value{v: v}
+	{{end -}}
+	default:
+		panic(fmt.Errorf("cannot create value from type %T", v))
+	}
+}
+
+type nullValue struct {
+	t Type
+}
+
+func NewNull(t Type) Value {
+	return nullValue{t: t}
+}
+
+func (v nullValue) Type() Type {
+	return v.t
+}
+
+func (v nullValue) Get() interface{} {
+	return nil
+}
+
+func (v nullValue) IsNull() bool {
+	return true
+}
+
+{{range .}}
+{{if ne . "string"}}
+func (v nullValue) {{title .}}() {{.}} {
+  panic("cannot get {{.}} out of null value")
+}
+{{end}}
+{{end}}
+
+func (v nullValue) String() string {
+	return "nil"
+}
