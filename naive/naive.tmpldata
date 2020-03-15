@@ -1,0 +1,6 @@
+{
+  "Package": "naive",
+  "NodeClass": "Node",
+	"ArchClass": "Stream",
+	"ArchFields": []
+}

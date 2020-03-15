@@ -1,3 +1,3 @@
-This package contains a naive engine built on top of `ssp` abstractions.
+This package contains a naive engine built using the graph generator tool.
 
-The engine has limited capabilities and it is as a POC for using the main abstractions.
+The engine has limited capabilities and it is a POC for using the graph generator.

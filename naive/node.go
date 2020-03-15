@@ -1,32 +1,30 @@
 package naive
 
-import "github.com/affo/ssp"
-
 type Node interface {
-	ssp.Node
-	In(s ssp.DataStream)
-	Do() ssp.DataStream
+	Out() Stream
+	In(s DataStream)
+	Do() DataStream
 }
 
 type Source struct {
-	ds ssp.DataStream
+	ds DataStream
 }
 
-func NewSource(ds ssp.DataStream) ssp.Stream {
+func NewSource(ds DataStream) Stream {
 	s := Source{}
 	s.In(ds)
 	return s.Out()
 }
 
-func (s *Source) In(ds ssp.DataStream) {
+func (s *Source) In(ds DataStream) {
 	s.ds = ds
 }
 
-func (s *Source) Out() ssp.Stream {
-	return ssp.NewStream(s)
+func (s *Source) Out() Stream {
+	return NewStream(s)
 }
 
-func (s *Source) Do() ssp.DataStream {
+func (s *Source) Do() DataStream {
 	return s.ds
 }
 
@@ -35,25 +33,25 @@ func (s *Source) String() string {
 }
 
 type Mapper struct {
-	f  func(v ssp.Value) []ssp.Value
-	ds ssp.DataStream
+	f  func(v int) []int
+	ds DataStream
 }
 
-func NewMapper(f func(v ssp.Value) []ssp.Value) Node {
+func NewMapper(f func(v int) []int) Node {
 	return &Mapper{
 		f: f,
 	}
 }
 
-func (m *Mapper) Out() ssp.Stream {
-	return ssp.NewStream(m)
+func (m *Mapper) Out() Stream {
+	return NewStream(m)
 }
 
-func (m *Mapper) In(s ssp.DataStream) {
+func (m *Mapper) In(s DataStream) {
 	m.ds = s
 }
 
-func (m *Mapper) Do() ssp.DataStream {
+func (m *Mapper) Do() DataStream {
 	sb := NewStreamBuilder()
 	for m.ds.More() {
 		vs := m.f(m.ds.Next())
@@ -69,20 +67,20 @@ func (m *Mapper) String() string {
 }
 
 type Sink struct {
-	Values []ssp.Value
+	Values []int
 }
 
-func (s *Sink) Out() ssp.Stream {
+func (s *Sink) Out() Stream {
 	panic("cannot take out stream of sink")
 }
 
-func (s *Sink) In(ds ssp.DataStream) {
+func (s *Sink) In(ds DataStream) {
 	for ds.More() {
 		s.Values = append(s.Values, ds.Next())
 	}
 }
 
-func (s *Sink) Do() ssp.DataStream {
+func (s *Sink) Do() DataStream {
 	// returned stream should never be used!
 	return nil
 }

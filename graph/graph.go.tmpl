@@ -104,10 +104,6 @@ func Context() context.Context {
 	return ctx
 }
 
-type {{.NodeClass}} interface {
-	Out() {{.ArchClass}}
-}
-
 type {{.ArchClass}} interface {
 	From() {{.NodeClass}}
 	To() {{.NodeClass}}

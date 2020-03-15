@@ -1,5 +1,9 @@
 package graph
 
+type Node interface {
+	Out() Arch
+}
+
 type BaseNode struct {
 	ID string
 }

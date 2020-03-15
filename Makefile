@@ -1,5 +1,6 @@
 generate:
 	go generate ./graph
+	go generate ./naive
 	go generate ./
 
 test:

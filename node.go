@@ -1,5 +1,9 @@
 package ssp
 
+type Node interface {
+	Out() Stream
+}
+
 type BaseNode struct {
 	ID string
 }

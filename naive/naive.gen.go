@@ -2,9 +2,9 @@
 // https://github.com/benbjohnson/tmpl
 //
 // DO NOT EDIT!
-// Source: graph.go.tmpl
+// Source: ../graph/graph.go.tmpl
 
-package graph
+package naive
 
 import (
 	"context"
@@ -18,11 +18,11 @@ type graphContextKey int
 const key graphContextKey = iota
 
 type Graph struct {
-	adjacency map[Node][]Arch
+	adjacency map[Node][]Stream
 	roots     map[Node]bool
 }
 
-func (g *Graph) add(a Arch) {
+func (g *Graph) add(a Stream) {
 	g.adjacency[a.From()] = append(g.adjacency[a.From()], a)
 	if _, ok := g.roots[a.From()]; !ok {
 		g.roots[a.From()] = true
@@ -40,12 +40,12 @@ func (g Graph) Roots() (roots []Node) {
 	return roots
 }
 
-func (g Graph) Adjacents(n Node) []Arch {
+func (g Graph) Adjacents(n Node) []Stream {
 	return g.adjacency[n]
 }
 
 // TODO(affo): more walking strategy and complete visitor class.
-type Visitor func(a Arch)
+type Visitor func(a Stream)
 
 type nodesByRepr []Node
 
@@ -82,7 +82,7 @@ func (g Graph) Walk(v Visitor) {
 
 func (g Graph) String() string {
 	sb := strings.Builder{}
-	g.Walk(func(a Arch) {
+	g.Walk(func(a Stream) {
 		sb.WriteString(fmt.Sprintf("%v", a))
 		sb.WriteRune('\n')
 	})
@@ -104,26 +104,24 @@ func setGraph(ctx context.Context, g Graph) context.Context {
 func Context() context.Context {
 	ctx := context.Background()
 	ctx = setGraph(ctx, Graph{
-		adjacency: make(map[Node][]Arch),
+		adjacency: make(map[Node][]Stream),
 		roots:     make(map[Node]bool),
 	})
 	return ctx
 }
 
-type Arch interface {
+type Stream interface {
 	From() Node
 	To() Node
-	Connect(ctx context.Context, node Node, name string) Node
-	Name() string
+	Connect(ctx context.Context, node Node) Node
 }
 
 type arch struct {
 	from Node
 	to   Node
-	name string
 }
 
-func NewArch(from Node) Arch {
+func NewStream(from Node) Stream {
 	return &arch{
 		from: from,
 	}
@@ -137,12 +135,11 @@ func (a *arch) To() Node {
 	return a.to
 }
 
-func (a *arch) Connect(ctx context.Context, node Node, name string) Node {
+func (a *arch) Connect(ctx context.Context, node Node) Node {
 	g := getGraph(ctx)
 	clone := &arch{
 		from: a.from,
 		to:   node,
-		name: name,
 	}
 	g.add(clone)
 	return node
@@ -151,11 +148,6 @@ func (a *arch) Connect(ctx context.Context, node Node, name string) Node {
 func (a *arch) String() string {
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintf("%v -> %v [", a.from, a.to))
-	sb.WriteString(fmt.Sprintf("name: %v", a.name))
 	sb.WriteRune(']')
 	return sb.String()
-}
-
-func (a *arch) Name() string {
-	return a.name
 }

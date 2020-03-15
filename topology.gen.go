@@ -110,10 +110,6 @@ func Context() context.Context {
 	return ctx
 }
 
-type Node interface {
-	Out() Stream
-}
-
 type Stream interface {
 	From() Node
 	To() Node
