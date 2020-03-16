@@ -7,8 +7,12 @@ generate:
 test:
 	go test ./...
 
-mod:
+tidy:
 	go mod tidy
 
 fmt:
 	go fmt ./...
+
+lint:
+	golangci-lint run
+

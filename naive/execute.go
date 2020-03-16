@@ -6,10 +6,7 @@ import (
 
 func Execute(ctx context.Context) error {
 	g := GetGraph(ctx)
-	roots := make([]Node, 0, len(g.Roots()))
-	for _, r := range g.Roots() {
-		roots = append(roots, r)
-	}
+	roots := g.Roots()
 	for len(roots) > 0 {
 		next := make([]Node, 0)
 		for _, root := range roots {

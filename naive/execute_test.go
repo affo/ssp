@@ -21,11 +21,7 @@ func Test_Execute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := make([]int, 0, len(s.Values))
-	for _, v := range s.Values {
-		got = append(got, v)
-	}
-	if diff := cmp.Diff([]int{2, 4, 6, 8, 10}, got); diff != "" {
+	if diff := cmp.Diff([]int{2, 4, 6, 8, 10}, s.Values); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
 	}
 }
