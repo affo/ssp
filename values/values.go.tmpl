@@ -7,66 +7,79 @@ import (
 type Type int
 
 const (
-	{{range $i, $e := . -}}
-    {{- if eq $i 0 -}}
-      {{title .}} Type = iota
-    {{else -}}
-      {{title .}}
-    {{end -}}
-  {{- end}}
+  _ Type = iota
+	{{range $t, $s := . -}}
+    {{- title $t}}
+  {{end}}
 )
+
+func (t Type) String() string {
+	switch t {
+	{{- range $t, $s := . -}}
+	case {{title $t}}:
+		return "{{$t}}"
+	{{end -}}
+	default:
+		panic(fmt.Errorf("unknown type %d", t))
+	}
+}
 
 type Value interface {
 	Type() Type
 	Get() interface{}
 	IsNull() bool
-	{{range . -}}
-    {{title .}}() {{.}}
+	SizeBytes() int
+	{{range $t, $s := . -}}
+    {{title $t}}() {{$t}}
   {{end}}
 }
 
-{{range $i, $e := . -}}
-type {{$e}}Value struct {
-  v {{$e}}
+{{range $t, $s := . -}}
+type {{$t}}Value struct {
+  v {{$t}}
 }
 
-func (v {{$e}}Value) Type() Type {
-  return {{title .}}
+func (v {{$t}}Value) Type() Type {
+  return {{title $t}}
 }
 
-func (v {{$e}}Value) Get() interface{} {
+func (v {{$t}}Value) Get() interface{} {
   return v.v
 }
 
-func (v {{$e}}Value) IsNull() bool {
+func (v {{$t}}Value) IsNull() bool {
   return false
 }
 
-{{range $}}
-{{if ne . "string"}}
-func (v {{$e}}Value) {{title .}}() {{.}} {
-  {{if eq $e . -}}
+func (v {{$t}}Value) SizeBytes() int {
+  return {{$s}}
+}
+
+{{range $tt, $s := $}}
+{{if ne $tt "string"}}
+func (v {{$t}}Value) {{title $tt}}() {{$tt}} {
+  {{if eq $t $tt -}}
   return v.v
   {{- else -}}
-  panic("cannot get {{.}} out of {{$e}}")
+  panic("cannot get {{$tt}} out of {{$t}}")
   {{- end}}
 }
 {{end}}
 {{end}}
 
-func (v {{$e}}Value) String() string {
+func (v {{$t}}Value) String() string {
   return fmt.Sprintf("%v", v.Get())
 }
 {{end}}
 
-func NewValue(v interface{}) Value {
+func New(v interface{}) Value {
 	if v == nil {
 		panic("cannot create value from nil")
 	}
 	switch v := v.(type) {
-	{{- range . -}}
-	case {{.}}:
-		return {{.}}Value{v: v}
+	{{- range $t, $s := . -}}
+	case {{$t}}:
+		return {{$t}}Value{v: v}
 	{{end -}}
 	default:
 		panic(fmt.Errorf("cannot create value from type %T", v))
@@ -93,10 +106,14 @@ func (v nullValue) IsNull() bool {
 	return true
 }
 
-{{range .}}
-{{if ne . "string"}}
-func (v nullValue) {{title .}}() {{.}} {
-  panic("cannot get {{.}} out of null value")
+func (v nullValue) SizeBytes() int {
+  return 0
+}
+
+{{range $t, $s := .}}
+{{if ne $t "string"}}
+func (v nullValue) {{title $t}}() {{$t}} {
+  panic("cannot get {{$t}} out of null value")
 }
 {{end}}
 {{end}}

@@ -1,11 +1,20 @@
 package ssp
 
-import "github.com/affo/ssp/values"
+import (
+	"fmt"
+
+	"github.com/affo/ssp/values"
+)
 
 type DataStream interface {
-	More() bool
 	Next() values.Value
 	Type() values.Type
+}
+
+// TwoWayStream is a DataStream with append capabilities.
+type TwoWayStream interface {
+	Collector
+	DataStream
 }
 
 type sliceStream struct {
@@ -13,10 +22,10 @@ type sliceStream struct {
 	vs []values.Value
 }
 
-func NewIntValues(ints ...int) []values.Value {
+func NewIntValues(ints ...int64) []values.Value {
 	vs := make([]values.Value, 0, len(ints))
 	for _, i := range ints {
-		vs = append(vs, values.NewValue(i))
+		vs = append(vs, values.New(i))
 	}
 	return vs
 }
@@ -27,18 +36,17 @@ func NewStreamFromElements(elems ...values.Value) DataStream {
 	}
 }
 
-func (s *sliceStream) More() bool {
-	return s.i < len(s.vs)
-}
-
 func (s *sliceStream) Next() values.Value {
+	if s.i >= len(s.vs) {
+		return nil
+	}
 	v := s.vs[s.i]
 	s.i++
 	return v
 }
 
 func (s *sliceStream) Type() values.Type {
-	return values.Int
+	return values.Int64
 }
 
 type emptyStream struct {
@@ -49,14 +57,46 @@ func NewEmptyStream(t values.Type) *emptyStream {
 	return &emptyStream{t: t}
 }
 
-func (e emptyStream) More() bool {
-	return false
-}
-
 func (e emptyStream) Next() values.Value {
-	panic("empty stream does not have next element")
+	return nil
 }
 
 func (e emptyStream) Type() values.Type {
 	return e.t
+}
+
+type infiniteStream struct {
+	s      chan values.Value
+	t      values.Type
+	closed bool
+}
+
+func NewInfiniteStream(t values.Type, bufferSize int) *infiniteStream {
+	return &infiniteStream{
+		t: t,
+		s: make(chan values.Value, bufferSize),
+	}
+}
+
+func (s *infiniteStream) Collect(v values.Value) {
+	if v.Type() != s.t {
+		panic(fmt.Errorf("stream of type %v cannot ingest value of type %v", s.t, v.Type()))
+	}
+	if s.closed {
+		panic(fmt.Errorf("attempted to send values to a closed stream"))
+	}
+	s.s <- v
+}
+
+func (s *infiniteStream) Next() values.Value {
+	return <-s.s
+}
+
+func (s *infiniteStream) Type() values.Type {
+	return s.t
+}
+
+func (s *infiniteStream) Close() {
+	s.closed = true
+	close(s.s)
 }

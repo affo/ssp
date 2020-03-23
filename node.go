@@ -2,75 +2,72 @@ package ssp
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/affo/ssp/values"
 )
 
 type Node interface {
 	Out() Stream
-	In(ds DataStream)
-	Do(collector Collector) error
+	Do(collector Collector, vs ...values.Value) error
+	InTypes() []values.Type
+	OutType() values.Type
 }
 
-type Operator struct {
-	ds       []DataStream
+type NodeFunc func(state values.Value, collector Collector, vs ...values.Value) (updatedState values.Value, e error)
+
+type AnonymousNode struct {
 	nStreams int
 
-	do func(collector Collector, vs ...values.Value) error
-
-	wg  sync.WaitGroup
-	err error
+	state values.Value
+	do    NodeFunc
+	inTs  []values.Type
+	outT  values.Type
 }
 
-func NewOperator(nStreams int, do func(collector Collector, vs ...values.Value) error) *Operator {
-	return &Operator{nStreams: nStreams, do: do}
+func NewNode(nStreams int, do func(collector Collector, vs ...values.Value) error, types ...values.Type) *AnonymousNode {
+	return NewStatefulNode(
+		nStreams,
+		values.NewNull(values.Int64),
+		func(state values.Value, collector Collector, vs ...values.Value) (value values.Value, e error) {
+			return state, do(collector, vs...)
+		},
+		types...,
+	)
 }
 
-func (o *Operator) Out() Stream {
+func NewStatefulNode(nStreams int, state0 values.Value, do NodeFunc, types ...values.Type) *AnonymousNode {
+	if len(types) < 2 {
+		panic(fmt.Errorf("need at least 2 types, got: %v", types))
+	}
+	return &AnonymousNode{
+		nStreams: nStreams,
+		state:    state0,
+		do:       do,
+		inTs:     types[:len(types)-2],
+		outT:     types[len(types)-1],
+	}
+}
+
+func (o *AnonymousNode) Out() Stream {
 	return NewStream(o)
 }
 
-func (o *Operator) In(ds DataStream) {
-	if len(o.ds) >= o.nStreams {
-		panic(fmt.Sprintf("cannot add input stream to operator: maximum number of streams is %d", o.nStreams))
+func (o *AnonymousNode) Do(collector Collector, vs ...values.Value) error {
+	if len(vs) > o.nStreams {
+		panic(fmt.Sprintf("cannot process streams: maximum number of streams is %d", o.nStreams))
 	}
-	o.ds = append(o.ds, ds)
+	s, err := o.do(o.state, collector, vs...)
+	if err != nil {
+		return err
+	}
+	o.state = s
+	return nil
 }
 
-func (o *Operator) Do(collector Collector) error {
-	vs := make([]values.Value, len(o.ds))
-	for i, d := range o.ds {
-		if d.More() {
-			vs[i] = d.Next()
-		} else {
-			vs[i] = values.NewNull(d.Type())
-		}
-	}
-	// Stop condition.
-	stop := true
-	for _, v := range vs {
-		if !v.IsNull() {
-			stop = false
-			break
-		}
-	}
-	if stop {
-		return nil
-	}
-	return o.do(collector, vs...)
+func (o *AnonymousNode) InTypes() []values.Type {
+	return o.inTs
 }
 
-func (o *Operator) Open(collector Collector) {
-	// TODO(affo): there will be parallelism here.
-	o.wg.Add(1)
-	go func() {
-		o.err = o.Do(collector)
-		o.wg.Done()
-	}()
-}
-
-func (o *Operator) Close() error {
-	o.wg.Wait()
-	return o.err
+func (o *AnonymousNode) OutType() values.Type {
+	return o.outT
 }

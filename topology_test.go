@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/affo/ssp/values"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -17,12 +18,16 @@ func (n BaseNode) Out() Stream {
 	return NewStream(n)
 }
 
-func (n BaseNode) In(ds DataStream) {
+func (n BaseNode) Do(collector Collector, vs ...values.Value) error {
 	panic("implement me")
 }
 
-func (n BaseNode) Do(collector Collector) error {
-	panic("implement me")
+func (n BaseNode) InTypes() []values.Type {
+	return []values.Type{values.Int64}
+}
+
+func (n BaseNode) OutType() values.Type {
+	return values.Int64
 }
 
 func (n BaseNode) String() string {
