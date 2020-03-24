@@ -15,14 +15,18 @@ func (e *Engine) Execute(ctx context.Context) error {
 	size := 1024
 	ops := make(map[Node]*Operator)
 	Walk(g, func(s Stream) {
-		if s.To() != nil {
-			ops[s.To()] = NewOperator(s.To(), NewInfiniteStream(s.To().OutType(), size))
-		}
-		if s.From() != nil {
-			from := ops[s.From()]
-			if from != nil {
-				from.In(from.c)
+		if from := s.From(); from != nil {
+			if _, ok := ops[from]; !ok {
+				ops[from] = NewOperator(from, NewInfiniteStream(from.OutType(), size))
 			}
+		}
+		if to := s.To(); to != nil {
+			if _, ok := ops[to]; !ok {
+				ops[to] = NewOperator(to, NewInfiniteStream(to.OutType(), size))
+			}
+		}
+		if from, to := s.From(), s.To(); from != nil && to != nil {
+			ops[to].In(ops[from].c)
 		}
 	})
 
@@ -93,6 +97,7 @@ func (o *Operator) Open() {
 	o.wg.Add(1)
 	go func() {
 		o.err = o.do()
+		o.c.Collect(values.NewMeta(values.Close))
 		o.wg.Done()
 	}()
 }

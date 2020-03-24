@@ -6,6 +6,7 @@ import (
 
 	"github.com/affo/ssp/values"
 	"github.com/fortytw2/leaktest"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestOperator(t *testing.T) {
@@ -22,7 +23,6 @@ func TestOperator(t *testing.T) {
 	o.Open()
 	defer func() {
 		in.Close()
-		out.Close()
 		if err := o.Close(); err != nil {
 			t.Fatalf("unexpected error on close: %v", err)
 		}
@@ -46,23 +46,34 @@ func TestEngine(t *testing.T) {
 
 	ctx := Context()
 
-	NewNode(0, func(collector Collector, vs ...values.Value) error {
-		for i := 0; i < 10; i++ {
+	p := NewNode(0, func(collector Collector, vs ...values.Value) error {
+		for i := 0; i < 5; i++ {
 			collector.Collect(values.New(int64(i)))
 		}
 		return nil
 	}, values.Bool, values.Int64).
 		Out().
-		Connect(ctx, NewStatefulNode(1, values.New(int64(1)),
+		Connect(ctx, NewStatefulNode(1, values.New(int64(0)),
 			func(state values.Value, collector Collector, vs ...values.Value) (updatedState values.Value, e error) {
-				state = values.New(state.Int64() + 1)
+				state = values.New(state.Int64() + vs[0].Int64())
 				collector.Collect(state)
 				return state, e
 			},
-			values.Int64, values.Int64), FixedSteer())
+			values.Int64, values.Int64), FixedSteer()).Out()
+
+	sink, log := NewLogSink(values.Int64)
+	p.Connect(ctx, sink, FixedSteer())
 
 	e := &Engine{}
 	if err := e.Execute(ctx); err != nil {
 		t.Fatal(err)
+	}
+
+	var got []int64
+	for _, v := range log.GetValues() {
+		got = append(got, v.Int64())
+	}
+	if diff := cmp.Diff([]int64{0, 1, 3, 6, 10}, got); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
 	}
 }

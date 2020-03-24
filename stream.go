@@ -79,11 +79,15 @@ func NewInfiniteStream(t values.Type, bufferSize int) *infiniteStream {
 }
 
 func (s *infiniteStream) Collect(v values.Value) {
-	if v.Type() != s.t {
-		panic(fmt.Errorf("stream of type %v cannot ingest value of type %v", s.t, v.Type()))
-	}
 	if s.closed {
 		panic(fmt.Errorf("attempted to send values to a closed stream"))
+	}
+	if v.Type() == values.Close {
+		s.Close()
+		return
+	}
+	if v.Type() != s.t {
+		panic(fmt.Errorf("stream of type %v cannot ingest value of type %v", s.t, v.Type()))
 	}
 	s.s <- v
 }

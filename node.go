@@ -71,3 +71,15 @@ func (o *AnonymousNode) InTypes() []values.Type {
 func (o *AnonymousNode) OutType() values.Type {
 	return o.outT
 }
+
+// TODO(affo): should be done for multiple types?
+func NewLogSink(t values.Type) (Node, *values.List) {
+	s := values.NewList(t)
+	return NewStatefulNode(1, s,
+		func(state values.Value, collector Collector, vs ...values.Value) (updatedState values.Value, e error) {
+			err := state.(*values.List).AddValue(vs[0])
+			return state, err
+		},
+		// The out type is irrelevant.
+		[]values.Type{t, values.Bool}...), s
+}
