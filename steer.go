@@ -3,19 +3,25 @@ package ssp
 import "github.com/affo/ssp/values"
 
 type Steer interface {
-	Assign(v values.Value, buckets []interface{}) (bucket int)
+	Assign(v values.Value) (bucket int)
 }
 
 type fixedSteer struct{}
 
-func (r fixedSteer) Assign(v values.Value, buckets []interface{}) (bucket int) {
+func FixedSteer() Steer {
+	return fixedSteer{}
+}
+
+func (f fixedSteer) Assign(v values.Value) (bucket int) {
 	return 0
 }
 
-func (r fixedSteer) String() string {
+func (f fixedSteer) String() string {
 	return "fixed"
 }
 
-func FixedSteer() Steer {
-	return fixedSteer{}
+type FnSteer func(v values.Value) int
+
+func (s FnSteer) Assign(v values.Value) (bucket int) {
+	return s(v)
 }

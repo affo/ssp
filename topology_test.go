@@ -18,7 +18,7 @@ func (n BaseNode) Out() Stream {
 	return NewStream(n)
 }
 
-func (n BaseNode) Do(collector Collector, vs ...values.Value) error {
+func (n BaseNode) Do(collector Collector, v values.Value) error {
 	panic("implement me")
 }
 
@@ -32,6 +32,11 @@ func (n BaseNode) OutType() values.Type {
 
 func (n BaseNode) String() string {
 	return n.ID
+}
+
+func (n BaseNode) Clone() Node {
+	// No need to clone here.
+	return n
 }
 
 func Test_NewTopology(t *testing.T) {

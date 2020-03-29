@@ -11,14 +11,14 @@ import (
 
 func TestInfiniteStream(t *testing.T) {
 	t.Run("new", func(t *testing.T) {
-		ds := NewInfiniteStream(values.Int64, 1024)
-		defer ds.Close()
+		ds := NewInfiniteStream(values.Int64, WithBuffer(1024))
+		defer SendClose(ds)
 	})
 
 	t.Run("put values", func(t *testing.T) {
 		size := 1024
-		ds := NewInfiniteStream(values.Int64, size)
-		defer ds.Close()
+		ds := NewInfiniteStream(values.Int64, WithBuffer(size))
+		defer SendClose(ds)
 
 		for i := 0; i < size; i++ {
 			ds.Collect(values.New(int64(i)))
@@ -35,7 +35,7 @@ func TestInfiniteStream(t *testing.T) {
 	t.Run("overcome size", func(t *testing.T) {
 		defer leaktest.Check(t)()
 
-		ds := NewInfiniteStream(values.Int64, 0)
+		ds := NewInfiniteStream(values.Int64, WithBuffer(0))
 
 		wg := sync.WaitGroup{}
 		wg.Add(1)
@@ -49,7 +49,7 @@ func TestInfiniteStream(t *testing.T) {
 
 		ds.Collect(values.New(int64(42)))
 		ds.Collect(values.New(int64(84)))
-		ds.Close()
+		SendClose(ds)
 		wg.Wait()
 
 		if diff := cmp.Diff([]int64{42, 84}, got); diff != "" {

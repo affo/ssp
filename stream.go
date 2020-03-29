@@ -6,15 +6,11 @@ import (
 	"github.com/affo/ssp/values"
 )
 
+var _ Transport = (*infiniteStream)(nil)
+
 type DataStream interface {
 	Next() values.Value
 	Type() values.Type
-}
-
-// TwoWayStream is a DataStream with append capabilities.
-type TwoWayStream interface {
-	Collector
-	DataStream
 }
 
 type sliceStream struct {
@@ -49,58 +45,75 @@ func (s *sliceStream) Type() values.Type {
 	return values.Int64
 }
 
-type emptyStream struct {
-	t values.Type
-}
-
-func NewEmptyStream(t values.Type) *emptyStream {
-	return &emptyStream{t: t}
-}
-
-func (e emptyStream) Next() values.Value {
-	return nil
-}
-
-func (e emptyStream) Type() values.Type {
-	return e.t
-}
-
 type infiniteStream struct {
-	s      chan values.Value
 	t      values.Type
+	s      chan values.Value
 	closed bool
+	opts   []StreamOption
+
+	steer      Steer
+	bufferSize int
 }
 
-func NewInfiniteStream(t values.Type, bufferSize int) *infiniteStream {
-	return &infiniteStream{
-		t: t,
-		s: make(chan values.Value, bufferSize),
+type StreamOption func(*infiniteStream)
+
+func WithSteer(steer Steer) StreamOption {
+	return func(s *infiniteStream) {
+		s.steer = steer
 	}
+}
+
+func WithBuffer(size int) StreamOption {
+	return func(s *infiniteStream) {
+		s.bufferSize = size
+	}
+}
+
+func NewInfiniteStream(t values.Type, opts ...StreamOption) *infiniteStream {
+	is := &infiniteStream{
+		t:    t,
+		opts: opts,
+	}
+	for _, opt := range opts {
+		opt(is)
+	}
+	is.s = make(chan values.Value, is.bufferSize)
+	return is
 }
 
 func (s *infiniteStream) Collect(v values.Value) {
 	if s.closed {
-		panic(fmt.Errorf("attempted to send values to a closed stream"))
-	}
-	if v.Type() == values.Close {
-		s.Close()
+		// The stream has already been closed. Do not collect.
 		return
 	}
-	if v.Type() != s.t {
+	if v.Type() != values.Close && v.Type() != s.t {
 		panic(fmt.Errorf("stream of type %v cannot ingest value of type %v", s.t, v.Type()))
+	}
+	if s.steer != nil {
+		k := s.steer.Assign(v)
+		v = values.NewKeyedValue(k, v)
 	}
 	s.s <- v
 }
 
+func (s *infiniteStream) close() {
+	s.closed = true
+	close(s.s)
+}
+
 func (s *infiniteStream) Next() values.Value {
-	return <-s.s
+	v := <-s.s
+	if v.Type() == values.Close {
+		s.close()
+		return nil
+	}
+	return v
 }
 
 func (s *infiniteStream) Type() values.Type {
 	return s.t
 }
 
-func (s *infiniteStream) Close() {
-	s.closed = true
-	close(s.s)
+func (s *infiniteStream) Clone() Transport {
+	return NewInfiniteStream(s.t, s.opts...)
 }

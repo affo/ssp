@@ -13,7 +13,7 @@ func NewList(t Type) *List {
 	return &List{t: t}
 }
 
-// TODO(affo): find bettr way of expressing types.
+// TODO(affo): find a better way of expressing types.
 //  A list if of type List<T>...
 func (l *List) Type() Type {
 	return l.t

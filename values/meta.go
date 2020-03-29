@@ -13,8 +13,8 @@ type meta struct {
 	t Type
 }
 
-// TODO(affo): find a better way  for extending types for values.
-//  Here, a meta could be of any type.  We want it to be only some subset of types.
+// TODO(affo): find a better way for extending types for values.
+//  Here, a meta could be of any type. We want it to be only some subset of types.
 func NewMeta(t Type) Value {
 	return meta{t: t}
 }
