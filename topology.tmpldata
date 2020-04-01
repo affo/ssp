@@ -3,6 +3,6 @@
   "NodeClass": "Node",
 	"ArchClass": "Stream",
 	"ArchFields": [
-	  {"Name": "steer", "Type": "Steer"}
+	  {"Name": "keySelector", "Type": "KeySelector"}
 	]
 }

@@ -46,25 +46,25 @@ func Test_NewTopology(t *testing.T) {
 		ns[i] = BaseNode{ID: strconv.FormatInt(int64(i), 10)}
 	}
 
-	o := ns[0].Out().Connect(ctx, ns[1], FixedSteer()).Out()
+	o := ns[0].Out().Connect(ctx, ns[1], NewFixedKeySelector()).Out()
 	// Multiple out.
-	o.Connect(ctx, ns[2], FixedSteer())
-	o.Connect(ctx, ns[3], FixedSteer())
+	o.Connect(ctx, ns[2], NewFixedKeySelector())
+	o.Connect(ctx, ns[3], NewFixedKeySelector())
 	// Multiple in.
-	ns[2].Out().Connect(ctx, ns[4], FixedSteer())
-	ns[3].Out().Connect(ctx, ns[4], FixedSteer())
-	ns[4].Out().Connect(ctx, ns[5], FixedSteer())
+	ns[2].Out().Connect(ctx, ns[4], NewFixedKeySelector())
+	ns[3].Out().Connect(ctx, ns[4], NewFixedKeySelector())
+	ns[4].Out().Connect(ctx, ns[5], NewFixedKeySelector())
 	// Disconnected piece.
-	ns[6].Out().Connect(ctx, ns[7], FixedSteer())
+	ns[6].Out().Connect(ctx, ns[7], NewFixedKeySelector())
 
 	g := GetGraph(ctx)
-	want := `0 -> 1 [steer: fixed]
-1 -> 2 [steer: fixed]
-1 -> 3 [steer: fixed]
-2 -> 4 [steer: fixed]
-3 -> 4 [steer: fixed]
-4 -> 5 [steer: fixed]
-6 -> 7 [steer: fixed]
+	want := `0 -> 1 [keyselector: fixed]
+1 -> 2 [keyselector: fixed]
+1 -> 3 [keyselector: fixed]
+2 -> 4 [keyselector: fixed]
+3 -> 4 [keyselector: fixed]
+4 -> 5 [keyselector: fixed]
+6 -> 7 [keyselector: fixed]
 `
 	if diff := cmp.Diff(want, g.String()); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)

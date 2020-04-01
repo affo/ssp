@@ -1,8 +1,6 @@
 package ssp
 
 import (
-	"fmt"
-
 	"github.com/affo/ssp/values"
 )
 
@@ -10,7 +8,6 @@ var _ Transport = (*infiniteStream)(nil)
 
 type DataStream interface {
 	Next() values.Value
-	Type() values.Type
 }
 
 type sliceStream struct {
@@ -41,41 +38,17 @@ func (s *sliceStream) Next() values.Value {
 	return v
 }
 
-func (s *sliceStream) Type() values.Type {
-	return values.Int64
-}
+const defaultBufferSize = 1024
 
 type infiniteStream struct {
-	t      values.Type
-	s      chan values.Value
-	closed bool
-	opts   []StreamOption
-
-	steer      Steer
+	s          chan values.Value
 	bufferSize int
+	closed     bool
 }
 
-type StreamOption func(*infiniteStream)
-
-func WithSteer(steer Steer) StreamOption {
-	return func(s *infiniteStream) {
-		s.steer = steer
-	}
-}
-
-func WithBuffer(size int) StreamOption {
-	return func(s *infiniteStream) {
-		s.bufferSize = size
-	}
-}
-
-func NewInfiniteStream(t values.Type, opts ...StreamOption) *infiniteStream {
+func NewInfiniteStream() *infiniteStream {
 	is := &infiniteStream{
-		t:    t,
-		opts: opts,
-	}
-	for _, opt := range opts {
-		opt(is)
+		bufferSize: defaultBufferSize,
 	}
 	is.s = make(chan values.Value, is.bufferSize)
 	return is
@@ -85,13 +58,6 @@ func (s *infiniteStream) Collect(v values.Value) {
 	if s.closed {
 		// The stream has already been closed. Do not collect.
 		return
-	}
-	if v.Type() != values.Close && v.Type() != s.t {
-		panic(fmt.Errorf("stream of type %v cannot ingest value of type %v", s.t, v.Type()))
-	}
-	if s.steer != nil {
-		k := s.steer.Assign(v)
-		v = values.NewKeyedValue(k, v)
 	}
 	s.s <- v
 }
@@ -108,12 +74,4 @@ func (s *infiniteStream) Next() values.Value {
 		return nil
 	}
 	return v
-}
-
-func (s *infiniteStream) Type() values.Type {
-	return s.t
-}
-
-func (s *infiniteStream) Clone() Transport {
-	return NewInfiniteStream(s.t, s.opts...)
 }

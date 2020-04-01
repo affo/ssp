@@ -16,5 +16,4 @@ func SendClose(c Collector) {
 type Transport interface {
 	Collector
 	DataStream
-	Clone() Transport
 }

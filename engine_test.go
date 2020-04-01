@@ -18,9 +18,10 @@ func TestOperator(t *testing.T) {
 		collector.Collect(values.New(strings.ToUpper(v.String())))
 		return nil
 	}, values.String, values.String)
-	in := NewInfiniteStream(values.String)
+	in := NewInfiniteStream()
+	out := NewInfiniteStream()
 	// Need some buffering to avoid deadlock because we consume at the end.
-	out := NewInfiniteStream(values.String, WithBuffer(10))
+	out.bufferSize = 10
 	o := NewOperator(n, out)
 	o.In(in)
 	o.Open()
@@ -47,12 +48,13 @@ func TestOperator(t *testing.T) {
 func TestParallelOperator(t *testing.T) {
 	defer leaktest.Check(t)()
 
-	steer := FnSteer(func(v values.Value) int {
-		return len(v.String())
+	ks := NewStringValueKeySelector(func(v values.Value) string {
+		return v.String()
 	})
-	in := NewInfiniteStream(values.String, WithSteer(steer))
+	in := NewInfiniteStream()
+	out := NewInfiniteStream()
 	// Need some buffering to avoid deadlock because we consume at the end.
-	out := NewInfiniteStream(values.String, WithBuffer(10))
+	out.bufferSize = 10
 	o := NewParallelOperator(4, func() *Operator {
 		return NewOperator(NewStatefulNode(1, values.New(int64(0)),
 			func(state values.Value, collector Collector, v values.Value) (values.Value, error) {
@@ -60,8 +62,10 @@ func TestParallelOperator(t *testing.T) {
 				collector.Collect(values.New(fmt.Sprintf("%v: %d", v, count)))
 				return values.New(count), nil
 			}, values.String, values.String), out)
+	}, WithInKeySelector(ks))
+	o.In(in, func() Transport {
+		return NewInfiniteStream()
 	})
-	o.In(in)
 	o.Open()
 	defer func() {
 		SendClose(in)
@@ -130,10 +134,10 @@ func TestEngine(t *testing.T) {
 				collector.Collect(state)
 				return state, e
 			},
-			values.Int64, values.Int64), FixedSteer()).Out()
+			values.Int64, values.Int64), NewFixedKeySelector()).Out()
 
 	sink, log := NewLogSink(values.Int64)
-	p.Connect(ctx, sink, FixedSteer())
+	p.Connect(ctx, sink, NewFixedKeySelector())
 
 	e := &Engine{}
 	if err := e.Execute(ctx); err != nil {

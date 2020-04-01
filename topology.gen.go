@@ -113,14 +113,14 @@ func Context() context.Context {
 type Stream interface {
 	From() Node
 	To() Node
-	Connect(ctx context.Context, node Node, steer Steer) Node
-	Steer() Steer
+	Connect(ctx context.Context, node Node, keyselector KeySelector) Node
+	KeySelector() KeySelector
 }
 
 type arch struct {
-	from  Node
-	to    Node
-	steer Steer
+	from        Node
+	to          Node
+	keyselector KeySelector
 }
 
 func NewStream(from Node) Stream {
@@ -137,12 +137,12 @@ func (a *arch) To() Node {
 	return a.to
 }
 
-func (a *arch) Connect(ctx context.Context, node Node, steer Steer) Node {
+func (a *arch) Connect(ctx context.Context, node Node, keyselector KeySelector) Node {
 	g := getGraph(ctx)
 	clone := &arch{
-		from:  a.from,
-		to:    node,
-		steer: steer,
+		from:        a.from,
+		to:          node,
+		keyselector: keyselector,
 	}
 	g.add(clone)
 	return node
@@ -151,11 +151,11 @@ func (a *arch) Connect(ctx context.Context, node Node, steer Steer) Node {
 func (a *arch) String() string {
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintf("%v -> %v [", a.from, a.to))
-	sb.WriteString(fmt.Sprintf("steer: %v", a.steer))
+	sb.WriteString(fmt.Sprintf("keyselector: %v", a.keyselector))
 	sb.WriteRune(']')
 	return sb.String()
 }
 
-func (a *arch) Steer() Steer {
-	return a.steer
+func (a *arch) KeySelector() KeySelector {
+	return a.keyselector
 }
