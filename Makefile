@@ -7,7 +7,7 @@ generate:
 test:
 	go test ./...
 
-tidy:
+tidy: fmt lint
 	go mod tidy
 
 fmt:

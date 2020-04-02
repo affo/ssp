@@ -65,7 +65,7 @@ func NewStringValueKeySelector(f func(v values.Value) string) KeySelector {
 func (s *stringValueKeySelector) GetKey(v values.Value) values.Key {
 	st := s.f(v)
 	h := fnv.New64a()
-	h.Write([]byte(st))
+	_, _ = h.Write([]byte(st))
 	return values.Key(h.Sum64())
 }
 

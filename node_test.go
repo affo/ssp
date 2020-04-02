@@ -17,14 +17,14 @@ func (c *dumbCollector) Collect(v values.Value) {
 }
 
 func Test_Node(t *testing.T) {
-	o := NewNode(1, func(collector Collector, v values.Value) error {
+	o := NewNode(func(collector Collector, v values.Value) error {
 		i := v.Int64()
 		collector.Collect(values.New(i * 1))
 		collector.Collect(values.New(i * 2))
 		collector.Collect(values.New(i * 3))
 		collector.Collect(values.New(i * 4))
 		return nil
-	}, values.Int64, values.Int64)
+	})
 	c := &dumbCollector{}
 	if err := o.Do(c, values.New(int64(1))); err != nil {
 		t.Fatal(err)
@@ -39,41 +39,11 @@ func Test_Node(t *testing.T) {
 }
 
 func Test_Node_Error(t *testing.T) {
-	t.Run("exceed input streams", func(t *testing.T) {
-		t.Skip("still no way to distinguish values from multiple streams")
-
-		defer func() {
-			if err := recover(); err == nil {
-				t.Fatal("did not panic")
-			}
-		}()
-
-		o := NewNode(1, func(collector Collector, v values.Value) error {
-			return nil
-		}, values.Int64, values.Int64)
-		_ = o.Do(&dumbCollector{}, values.New(int64(1)))
+	o := NewNode(func(collector Collector, v values.Value) error {
+		return fmt.Errorf("an error")
 	})
-
-	t.Run("omit types", func(t *testing.T) {
-		defer func() {
-			if err := recover(); err == nil {
-				t.Fatal("did not panic")
-			}
-		}()
-
-		o := NewNode(1, func(collector Collector, v values.Value) error {
-			return nil
-		}, values.Int64)
-		_ = o.Do(&dumbCollector{}, values.New(int64(1)))
-	})
-
-	t.Run("do error", func(t *testing.T) {
-		o := NewNode(1, func(collector Collector, v values.Value) error {
-			return fmt.Errorf("an error")
-		}, values.Int64, values.Int64)
-		// Pass at least 1 value to trigger the error above.
-		if err := o.Do(&dumbCollector{}, values.New(int64(1))); err == nil {
-			t.Fatal("expected error got none")
-		}
-	})
+	// Pass at least 1 value to trigger the error above.
+	if err := o.Do(&dumbCollector{}, values.New(int64(1))); err == nil {
+		t.Fatal("expected error got none")
+	}
 }

@@ -8,6 +8,21 @@ __TODO__
  - [x] walk graph
  - [x] abstractions on top
  - [ ] serious engine
+   - [x] parallel operators
+   - [x] partitioned streams
+   - [ ] remove type checks (why should we need it?)
+   - [ ] multiple outputs
+   - [ ] deeper testing
+   - [ ] add timestamps to records
+   - [ ] implement tuples
+   - [ ] distinguish records from different streams
+   - [ ] word count benchmark
+ - [ ] manage time
+   - [ ] watermarks
+   - [ ] triggers
+   - [ ] windows
+ - [ ] abstractions on top
+   
  
 __Optional__
 

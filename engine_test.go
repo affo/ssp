@@ -14,10 +14,10 @@ import (
 func TestOperator(t *testing.T) {
 	defer leaktest.Check(t)()
 
-	n := NewNode(1, func(collector Collector, v values.Value) error {
+	n := NewNode(func(collector Collector, v values.Value) error {
 		collector.Collect(values.New(strings.ToUpper(v.String())))
 		return nil
-	}, values.String, values.String)
+	})
 	in := NewInfiniteStream()
 	out := NewInfiniteStream()
 	// Need some buffering to avoid deadlock because we consume at the end.
@@ -56,12 +56,12 @@ func TestParallelOperator(t *testing.T) {
 	// Need some buffering to avoid deadlock because we consume at the end.
 	out.bufferSize = 10
 	o := NewParallelOperator(4, func() *Operator {
-		return NewOperator(NewStatefulNode(1, values.New(int64(0)),
+		return NewOperator(NewStatefulNode(values.New(int64(0)),
 			func(state values.Value, collector Collector, v values.Value) (values.Value, error) {
 				count := state.Int64() + 1
 				collector.Collect(values.New(fmt.Sprintf("%v: %d", v, count)))
 				return values.New(count), nil
-			}, values.String, values.String), out)
+			}), out)
 	}, WithInKeySelector(ks))
 	o.In(in, func() Transport {
 		return NewInfiniteStream()
@@ -121,20 +121,19 @@ func TestEngine(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	ctx := Context()
-	p := NewNode(0, func(collector Collector, v values.Value) error {
+	p := NewNode(func(collector Collector, v values.Value) error {
 		for i := 0; i < 5; i++ {
 			collector.Collect(values.New(int64(i)))
 		}
 		return nil
-	}, values.Bool, values.Int64).
+	}).
 		Out().
-		Connect(ctx, NewStatefulNode(1, values.New(int64(0)),
+		Connect(ctx, NewStatefulNode(values.New(int64(0)),
 			func(state values.Value, collector Collector, v values.Value) (updatedState values.Value, e error) {
 				state = values.New(state.Int64() + v.Int64())
 				collector.Collect(state)
 				return state, e
-			},
-			values.Int64, values.Int64), NewFixedKeySelector()).Out()
+			}), NewFixedKeySelector()).Out()
 
 	sink, log := NewLogSink(values.Int64)
 	p.Connect(ctx, sink, NewFixedKeySelector())
