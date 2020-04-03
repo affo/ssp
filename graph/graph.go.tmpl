@@ -12,11 +12,11 @@ type graphContextKey int
 const key graphContextKey = iota
 
 type Graph struct {
-	adjacency map[{{.NodeClass}}][]{{.ArchClass}}
+	adjacency map[{{.NodeClass}}][]*Arch
 	roots     map[{{.NodeClass}}]bool
 }
 
-func (g *Graph) add(a {{.ArchClass}}) {
+func (g *Graph) add(a *Arch) {
 	g.adjacency[a.From()] = append(g.adjacency[a.From()], a)
 	if _, ok := g.roots[a.From()]; !ok {
 		g.roots[a.From()] = true
@@ -34,12 +34,11 @@ func (g Graph) Roots() (roots []{{.NodeClass}}) {
 	return roots
 }
 
-func (g Graph) Adjacents(n {{.NodeClass}}) []{{.ArchClass}} {
+func (g Graph) Adjacents(n {{.NodeClass}}) []*Arch {
 	return g.adjacency[n]
 }
 
-// TODO(affo): more walking strategy and complete visitor class.
-type Visitor func(a {{.ArchClass}})
+type Visitor func(a *Arch)
 
 type nodesByRepr []{{.NodeClass}}
 
@@ -76,7 +75,7 @@ func (g Graph) Walk(v Visitor) {
 
 func (g Graph) String() string {
 	sb := strings.Builder{}
-	g.Walk(func(a {{.ArchClass}}) {
+	g.Walk(func(a *Arch) {
 		sb.WriteString(fmt.Sprintf("%v", a))
 		sb.WriteRune('\n')
 	})
@@ -98,72 +97,52 @@ func setGraph(ctx context.Context, g Graph) context.Context {
 func Context() context.Context {
 	ctx := context.Background()
 	ctx = setGraph(ctx, Graph{
-		adjacency: make(map[{{.NodeClass}}][]{{.ArchClass}}),
+		adjacency: make(map[{{.NodeClass}}][]*Arch),
 		roots:     make(map[{{.NodeClass}}]bool),
 	})
 	return ctx
 }
 
-type {{.ArchClass}} interface {
-	From() {{.NodeClass}}
-	To() {{.NodeClass}}
-	Connect(ctx context.Context, node {{.NodeClass}} {{range .ArchFields}}, {{lower .Name}} {{.Type}}{{end}}) {{.NodeClass}}
-	{{range .ArchFields -}}
-	  {{title .Name}}() {{.Type}}
-  {{end}}
+type Link interface {
+	Connect(ctx context.Context, node {{.NodeClass}}) {{.NodeClass}}
 }
 
-type arch struct {
+var _ Link = (*Arch)(nil)
+
+type Arch struct {
 	from Node
 	to   Node
+
+	// Fields added by the user.
 	{{range .ArchFields -}}
-	  {{lower .Name}} {{.Type}}
-	{{end}}
+    {{.Name}} {{.Type}}
+  {{- end}}
 }
 
-func New{{.ArchClass}}(from Node) {{.ArchClass}} {
-	return &arch{
+func NewLink(from Node) *Arch {
+	return &Arch{
 	  from: from,
 	}
 }
 
-func (a *arch) From() Node {
+func (a *Arch) From() Node {
 	return a.from
 }
 
-func (a *arch) To() Node {
+func (a *Arch) To() Node {
 	return a.to
 }
 
-func (a *arch) Connect(ctx context.Context, node Node {{range .ArchFields}}, {{lower .Name}} {{.Type}}{{end}}) Node {
+func (a *Arch) Connect(ctx context.Context, node Node) Node {
 	g := getGraph(ctx)
-	clone := &arch{
+	clone := &Arch{
 	  from: a.from,
 	  to: node,
-	  {{range .ArchFields -}}
-      {{lower .Name}}: {{lower .Name}},
-    {{- end}}
 	}
 	g.add(clone)
 	return node
 }
 
-func (a *arch) String() string {
-	sb := strings.Builder{}
-  	sb.WriteString(fmt.Sprintf("%v -> %v [", a.from, a.to))
-  	{{range $i, $e := .ArchFields -}}
-  	  {{- if eq $i 0 -}}
-  	    sb.WriteString(fmt.Sprintf("{{lower $e.Name}}: %v", a.{{lower $e.Name}}))
-  	  {{else -}}
-  	    sb.WriteString(fmt.Sprintf(", {{lower $e.Name}}: %v", a.{{lower $e.Name}}))
-  	  {{end -}}
-  	{{- end -}}
-  	sb.WriteRune(']')
-  	return sb.String()
+func (a *Arch) String() string {
+  return fmt.Sprintf("%v -> %v", a.from, a.to)
 }
-
-{{range .ArchFields -}}
-func (a *arch) {{title .Name}}() {{.Type}} {
-  return a.{{lower .Name}}
-}
-{{end}}

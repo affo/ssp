@@ -1,8 +1,7 @@
 {
   "Package": "ssp",
   "NodeClass": "Node",
-	"ArchClass": "Stream",
-	"ArchFields": [
-	  {"Name": "keySelector", "Type": "KeySelector"}
-	]
+  "ArchFields": [
+    {"Name": "ks", "Type": "KeySelector"}
+  ]
 }

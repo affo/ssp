@@ -1,6 +1,6 @@
 package ssp
 
-func Walk(g Graph, f func(Stream)) {
+func Walk(g Graph, f Visitor) {
 	roots := g.Roots()
 	for len(roots) > 0 {
 		next := make([]Node, 0)

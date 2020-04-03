@@ -1,7 +1,7 @@
 package naive
 
 type Node interface {
-	Out() Stream
+	Out() Link
 	In(s DataStream)
 	Do() DataStream
 }
@@ -10,7 +10,7 @@ type Source struct {
 	ds DataStream
 }
 
-func NewSource(ds DataStream) Stream {
+func NewSource(ds DataStream) Link {
 	s := Source{}
 	s.In(ds)
 	return s.Out()
@@ -20,8 +20,8 @@ func (s *Source) In(ds DataStream) {
 	s.ds = ds
 }
 
-func (s *Source) Out() Stream {
-	return NewStream(s)
+func (s *Source) Out() Link {
+	return NewLink(s)
 }
 
 func (s *Source) Do() DataStream {
@@ -43,8 +43,8 @@ func NewMapper(f func(v int) []int) Node {
 	}
 }
 
-func (m *Mapper) Out() Stream {
-	return NewStream(m)
+func (m *Mapper) Out() Link {
+	return NewLink(m)
 }
 
 func (m *Mapper) In(s DataStream) {
@@ -70,7 +70,7 @@ type Sink struct {
 	Values []int
 }
 
-func (s *Sink) Out() Stream {
+func (s *Sink) Out() Link {
 	panic("cannot take out stream of sink")
 }
 

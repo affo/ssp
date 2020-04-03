@@ -16,14 +16,13 @@ func (e *Engine) Execute(ctx context.Context) error {
 	ops := make(map[Node]*ParallelOperator)
 	ins := make(map[Node][]*infiniteStream)
 	outs := make(map[Node][]*infiniteStream)
-	Walk(g, func(s Stream) {
+	Walk(g, func(s *Arch) {
 		if from := s.From(); from != nil {
 			if _, ok := ops[from]; !ok {
 				is := NewInfiniteStream()
-				// TODO(affo): add parallelism in Node definition.
-				ops[from] = NewParallelOperator(1, func() *Operator {
+				ops[from] = NewParallelOperator(from.GetParallelism(), func() *Operator {
 					return NewOperator(from, is)
-				}, WithInKeySelector(s.KeySelector()))
+				})
 				if _, ok := outs[from]; !ok {
 					outs[from] = make([]*infiniteStream, 0)
 				}
@@ -33,9 +32,9 @@ func (e *Engine) Execute(ctx context.Context) error {
 		if to := s.To(); to != nil {
 			if _, ok := ops[to]; !ok {
 				is := NewInfiniteStream()
-				ops[to] = NewParallelOperator(1, func() *Operator {
+				ops[to] = NewParallelOperator(to.GetParallelism(), func() *Operator {
 					return NewOperator(to, is)
-				}, WithInKeySelector(s.KeySelector()))
+				}, WithInKeySelector(s.ks))
 				if _, ok := outs[to]; !ok {
 					outs[to] = make([]*infiniteStream, 0)
 				}
@@ -150,9 +149,6 @@ func (o *Operator) do() error {
 			// Pick the first node available:
 			n = o.getNode(0)
 		}
-		// TODO: type check is here:
-		//  - TODO: check type based on the inTypes
-		//  - TODO: create collector that errors on wrong type
 		if v != nil {
 			if err := n.Do(o.out, v); err != nil {
 				return err

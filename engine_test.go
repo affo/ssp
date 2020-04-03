@@ -133,10 +133,10 @@ func TestEngine(t *testing.T) {
 				state = values.New(state.Int64() + v.Int64())
 				collector.Collect(state)
 				return state, e
-			}), NewFixedKeySelector()).Out()
+			})).Out()
 
 	sink, log := NewLogSink(values.Int64)
-	p.Connect(ctx, sink, NewFixedKeySelector())
+	p.Connect(ctx, sink)
 
 	e := &Engine{}
 	if err := e.Execute(ctx); err != nil {
@@ -148,6 +148,76 @@ func TestEngine(t *testing.T) {
 		got = append(got, v.Int64())
 	}
 	if diff := cmp.Diff([]int64{0, 1, 3, 6, 10}, got); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
+	}
+}
+
+func TestParallelEngine(t *testing.T) {
+	t.Skip("this fails, investigate")
+
+	defer leaktest.Check(t)()
+
+	ctx := Context()
+	p := NewNode(func(collector Collector, v values.Value) error {
+		in := []string{
+			"hello",
+			"this",
+			"is",
+			"ssp",
+			"hello",
+			"this",
+			"is",
+			"sparta",
+			"sparta",
+			"is",
+			"leonida",
+		}
+		for _, v := range in {
+			collector.Collect(values.New(v))
+		}
+		return nil
+	}).
+		Out().
+		KeyBy(NewStringValueKeySelector(func(v values.Value) string {
+			return v.String()
+		})).
+		Connect(ctx, NewStatefulNode(values.New(int64(0)),
+			func(state values.Value, collector Collector, v values.Value) (values.Value, error) {
+				count := state.Int64() + 1
+				collector.Collect(values.New(fmt.Sprintf("%v: %d", v, count)))
+				return values.New(count), nil
+			})).
+		SetName("wordCounter").
+		SetParallelism(4).
+		Out()
+
+	sink, log := NewLogSink(values.String)
+	p.Connect(ctx, sink)
+
+	e := &Engine{}
+	if err := e.Execute(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		"hello: 1",
+		"hello: 2",
+		"is: 1",
+		"is: 2",
+		"is: 3",
+		"leonida: 1",
+		"sparta: 1",
+		"sparta: 2",
+		"ssp: 1",
+		"this: 1",
+		"this: 2",
+	}
+	var got []string
+	for _, v := range log.GetValues() {
+		got = append(got, v.String())
+	}
+	sort.Strings(got)
+	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
 	}
 }

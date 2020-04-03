@@ -18,11 +18,11 @@ type graphContextKey int
 const key graphContextKey = iota
 
 type Graph struct {
-	adjacency map[Node][]Stream
+	adjacency map[Node][]*Arch
 	roots     map[Node]bool
 }
 
-func (g *Graph) add(a Stream) {
+func (g *Graph) add(a *Arch) {
 	g.adjacency[a.From()] = append(g.adjacency[a.From()], a)
 	if _, ok := g.roots[a.From()]; !ok {
 		g.roots[a.From()] = true
@@ -40,12 +40,11 @@ func (g Graph) Roots() (roots []Node) {
 	return roots
 }
 
-func (g Graph) Adjacents(n Node) []Stream {
+func (g Graph) Adjacents(n Node) []*Arch {
 	return g.adjacency[n]
 }
 
-// TODO(affo): more walking strategy and complete visitor class.
-type Visitor func(a Stream)
+type Visitor func(a *Arch)
 
 type nodesByRepr []Node
 
@@ -82,7 +81,7 @@ func (g Graph) Walk(v Visitor) {
 
 func (g Graph) String() string {
 	sb := strings.Builder{}
-	g.Walk(func(a Stream) {
+	g.Walk(func(a *Arch) {
 		sb.WriteString(fmt.Sprintf("%v", a))
 		sb.WriteRune('\n')
 	})
@@ -104,58 +103,50 @@ func setGraph(ctx context.Context, g Graph) context.Context {
 func Context() context.Context {
 	ctx := context.Background()
 	ctx = setGraph(ctx, Graph{
-		adjacency: make(map[Node][]Stream),
+		adjacency: make(map[Node][]*Arch),
 		roots:     make(map[Node]bool),
 	})
 	return ctx
 }
 
-type Stream interface {
-	From() Node
-	To() Node
-	Connect(ctx context.Context, node Node, keyselector KeySelector) Node
-	KeySelector() KeySelector
+type Link interface {
+	Connect(ctx context.Context, node Node) Node
 }
 
-type arch struct {
-	from        Node
-	to          Node
-	keyselector KeySelector
+var _ Link = (*Arch)(nil)
+
+type Arch struct {
+	from Node
+	to   Node
+
+	// Fields added by the user.
+	ks KeySelector
 }
 
-func NewStream(from Node) Stream {
-	return &arch{
+func NewLink(from Node) *Arch {
+	return &Arch{
 		from: from,
 	}
 }
 
-func (a *arch) From() Node {
+func (a *Arch) From() Node {
 	return a.from
 }
 
-func (a *arch) To() Node {
+func (a *Arch) To() Node {
 	return a.to
 }
 
-func (a *arch) Connect(ctx context.Context, node Node, keyselector KeySelector) Node {
+func (a *Arch) Connect(ctx context.Context, node Node) Node {
 	g := getGraph(ctx)
-	clone := &arch{
-		from:        a.from,
-		to:          node,
-		keyselector: keyselector,
+	clone := &Arch{
+		from: a.from,
+		to:   node,
 	}
 	g.add(clone)
 	return node
 }
 
-func (a *arch) String() string {
-	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("%v -> %v [", a.from, a.to))
-	sb.WriteString(fmt.Sprintf("keyselector: %v", a.keyselector))
-	sb.WriteRune(']')
-	return sb.String()
-}
-
-func (a *arch) KeySelector() KeySelector {
-	return a.keyselector
+func (a *Arch) String() string {
+	return fmt.Sprintf("%v -> %v", a.from, a.to)
 }

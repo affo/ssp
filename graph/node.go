@@ -1,15 +1,15 @@
 package graph
 
 type Node interface {
-	Out() Arch
+	Out() Link
 }
 
 type BaseNode struct {
 	ID string
 }
 
-func (n BaseNode) Out() Arch {
-	return NewArch(n)
+func (n BaseNode) Out() Link {
+	return NewLink(n)
 }
 
 func (n BaseNode) String() string {

@@ -10,12 +10,13 @@ __TODO__
  - [ ] serious engine
    - [x] parallel operators
    - [x] partitioned streams
-   - [ ] remove type checks (why should we need it?)
-   - [ ] multiple outputs
+   - [x] remove type checks and input stream check
+   - [ ] (multiple outputs)
+   - [x] fix API to be cleaner
+   - [ ] distinguish records from different streams
    - [ ] deeper testing
    - [ ] add timestamps to records
    - [ ] implement tuples
-   - [ ] distinguish records from different streams
    - [ ] word count benchmark
  - [ ] manage time
    - [ ] watermarks

@@ -1,8 +1,4 @@
 {
   "Package": "graph",
-	"NodeClass": "Node",
-	"ArchClass": "Arch",
-	"ArchFields": [
-	  {"Name": "name", "Type": "string"}
-	]
+	"NodeClass": "Node"
 }
