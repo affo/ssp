@@ -153,8 +153,6 @@ func TestEngine(t *testing.T) {
 }
 
 func TestParallelEngine(t *testing.T) {
-	t.Skip("this fails, investigate")
-
 	defer leaktest.Check(t)()
 
 	ctx := Context()

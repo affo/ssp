@@ -142,6 +142,8 @@ func (a *Arch) Connect(ctx context.Context, node Node) Node {
 	clone := &Arch{
 		from: a.from,
 		to:   node,
+		// Fields added by the user.
+
 	}
 	g.add(clone)
 	return node

@@ -55,10 +55,6 @@ func NewInfiniteStream() *infiniteStream {
 }
 
 func (s *infiniteStream) Collect(v values.Value) {
-	if s.closed {
-		// The stream has already been closed. Do not collect.
-		return
-	}
 	s.s <- v
 }
 
