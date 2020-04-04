@@ -8,16 +8,17 @@ type Type int
 
 const (
   _ Type = iota
-	{{range $t, $s := . -}}
-    {{- title $t}}
+  Object
+	{{range . -}}
+    {{- title .}}
   {{end}}
 )
 
 func (t Type) String() string {
 	switch t {
-	{{- range $t, $s := . -}}
-	case {{title $t}}:
-		return "{{$t}}"
+	{{- range . -}}
+	case {{title .}}:
+		return "{{.}}"
 	{{end -}}
 	default:
 		panic(fmt.Errorf("unknown type %d", t))
@@ -28,13 +29,12 @@ type Value interface {
 	Type() Type
 	Get() interface{}
 	IsNull() bool
-	SizeBytes() int
-	{{range $t, $s := . -}}
-    {{title $t}}() {{$t}}
+	{{range . -}}
+    {{title .}}() {{.}}
   {{end}}
 }
 
-{{range $t, $s := . -}}
+{{range $t := . -}}
 type {{$t}}Value struct {
   v {{$t}}
 }
@@ -51,11 +51,7 @@ func (v {{$t}}Value) IsNull() bool {
   return false
 }
 
-func (v {{$t}}Value) SizeBytes() int {
-  return {{$s}}
-}
-
-{{range $tt, $s := $}}
+{{range $tt := $}}
 {{if ne $tt "string"}}
 func (v {{$t}}Value) {{title $tt}}() {{$tt}} {
   {{if eq $t $tt -}}
@@ -77,12 +73,12 @@ func New(v interface{}) Value {
 		panic("cannot create value from nil")
 	}
 	switch v := v.(type) {
-	{{- range $t, $s := . -}}
-	case {{$t}}:
-		return {{$t}}Value{v: v}
+	{{- range . -}}
+	case {{.}}:
+		return {{.}}Value{v: v}
 	{{end -}}
-	default:
-		panic(fmt.Errorf("cannot create value from type %T", v))
+  default:
+    return goObjectValue{v: v}
 	}
 }
 
@@ -110,14 +106,42 @@ func (v nullValue) SizeBytes() int {
   return 0
 }
 
-{{range $t, $s := .}}
-{{if ne $t "string"}}
-func (v nullValue) {{title $t}}() {{$t}} {
-  panic("cannot get {{$t}} out of null value")
+{{range .}}
+{{if ne . "string"}}
+func (v nullValue) {{title .}}() {{.}} {
+  panic("cannot get {{.}} out of null value")
 }
 {{end}}
 {{end}}
 
 func (v nullValue) String() string {
-	return "nil"
+	return fmt.Sprintf("nil(%v)", v.t)
+}
+
+type goObjectValue struct {
+  v interface{}
+}
+
+func (v goObjectValue) Type() Type {
+	return Object
+}
+
+func (v goObjectValue) Get() interface{} {
+	return v.v
+}
+
+func (v goObjectValue) IsNull() bool {
+	return true
+}
+
+{{range .}}
+{{if ne . "string"}}
+func (v goObjectValue) {{title .}}() {{.}} {
+  panic("cannot get {{.}} out of generic Go object value")
+}
+{{end}}
+{{end}}
+
+func (v goObjectValue) String() string {
+	return fmt.Sprintf("%v", v.v)
 }

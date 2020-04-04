@@ -39,7 +39,7 @@ func (l *List) IsNull() bool {
 	panic("implement me")
 }
 
-func (l *List) SizeBytes() int {
+func (l *List) Int() int {
 	panic("implement me")
 }
 

@@ -14,46 +14,50 @@ type Type int
 
 const (
 	_ Type = iota
-	Bool
-	Float32
-	Float64
+	Object
+	Int
+	Int8
 	Int16
 	Int32
 	Int64
-	Int8
-	String
+	Uint8
 	Uint16
 	Uint32
 	Uint64
-	Uint8
+	Float32
+	Float64
+	String
+	Bool
 )
 
 func (t Type) String() string {
 	switch t {
-	case Bool:
-		return "bool"
-	case Float32:
-		return "float32"
-	case Float64:
-		return "float64"
+	case Int:
+		return "int"
+	case Int8:
+		return "int8"
 	case Int16:
 		return "int16"
 	case Int32:
 		return "int32"
 	case Int64:
 		return "int64"
-	case Int8:
-		return "int8"
-	case String:
-		return "string"
+	case Uint8:
+		return "uint8"
 	case Uint16:
 		return "uint16"
 	case Uint32:
 		return "uint32"
 	case Uint64:
 		return "uint64"
-	case Uint8:
-		return "uint8"
+	case Float32:
+		return "float32"
+	case Float64:
+		return "float64"
+	case String:
+		return "string"
+	case Bool:
+		return "bool"
 	default:
 		panic(fmt.Errorf("unknown type %d", t))
 	}
@@ -63,222 +67,154 @@ type Value interface {
 	Type() Type
 	Get() interface{}
 	IsNull() bool
-	SizeBytes() int
-	Bool() bool
-	Float32() float32
-	Float64() float64
+	Int() int
+	Int8() int8
 	Int16() int16
 	Int32() int32
 	Int64() int64
-	Int8() int8
-	String() string
+	Uint8() uint8
 	Uint16() uint16
 	Uint32() uint32
 	Uint64() uint64
-	Uint8() uint8
+	Float32() float32
+	Float64() float64
+	String() string
+	Bool() bool
 }
 
-type boolValue struct {
-	v bool
+type intValue struct {
+	v int
 }
 
-func (v boolValue) Type() Type {
-	return Bool
+func (v intValue) Type() Type {
+	return Int
 }
 
-func (v boolValue) Get() interface{} {
+func (v intValue) Get() interface{} {
 	return v.v
 }
 
-func (v boolValue) IsNull() bool {
+func (v intValue) IsNull() bool {
 	return false
 }
 
-func (v boolValue) SizeBytes() int {
-	return 1
-}
-
-func (v boolValue) Bool() bool {
+func (v intValue) Int() int {
 	return v.v
 }
 
-func (v boolValue) Float32() float32 {
-	panic("cannot get float32 out of bool")
+func (v intValue) Int8() int8 {
+	panic("cannot get int8 out of int")
 }
 
-func (v boolValue) Float64() float64 {
-	panic("cannot get float64 out of bool")
+func (v intValue) Int16() int16 {
+	panic("cannot get int16 out of int")
 }
 
-func (v boolValue) Int16() int16 {
-	panic("cannot get int16 out of bool")
+func (v intValue) Int32() int32 {
+	panic("cannot get int32 out of int")
 }
 
-func (v boolValue) Int32() int32 {
-	panic("cannot get int32 out of bool")
+func (v intValue) Int64() int64 {
+	panic("cannot get int64 out of int")
 }
 
-func (v boolValue) Int64() int64 {
-	panic("cannot get int64 out of bool")
+func (v intValue) Uint8() uint8 {
+	panic("cannot get uint8 out of int")
 }
 
-func (v boolValue) Int8() int8 {
-	panic("cannot get int8 out of bool")
+func (v intValue) Uint16() uint16 {
+	panic("cannot get uint16 out of int")
 }
 
-func (v boolValue) Uint16() uint16 {
-	panic("cannot get uint16 out of bool")
+func (v intValue) Uint32() uint32 {
+	panic("cannot get uint32 out of int")
 }
 
-func (v boolValue) Uint32() uint32 {
-	panic("cannot get uint32 out of bool")
+func (v intValue) Uint64() uint64 {
+	panic("cannot get uint64 out of int")
 }
 
-func (v boolValue) Uint64() uint64 {
-	panic("cannot get uint64 out of bool")
+func (v intValue) Float32() float32 {
+	panic("cannot get float32 out of int")
 }
 
-func (v boolValue) Uint8() uint8 {
-	panic("cannot get uint8 out of bool")
+func (v intValue) Float64() float64 {
+	panic("cannot get float64 out of int")
 }
 
-func (v boolValue) String() string {
+func (v intValue) Bool() bool {
+	panic("cannot get bool out of int")
+}
+
+func (v intValue) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
-type float32Value struct {
-	v float32
+type int8Value struct {
+	v int8
 }
 
-func (v float32Value) Type() Type {
-	return Float32
+func (v int8Value) Type() Type {
+	return Int8
 }
 
-func (v float32Value) Get() interface{} {
+func (v int8Value) Get() interface{} {
 	return v.v
 }
 
-func (v float32Value) IsNull() bool {
+func (v int8Value) IsNull() bool {
 	return false
 }
 
-func (v float32Value) SizeBytes() int {
-	return 32
+func (v int8Value) Int() int {
+	panic("cannot get int out of int8")
 }
 
-func (v float32Value) Bool() bool {
-	panic("cannot get bool out of float32")
-}
-
-func (v float32Value) Float32() float32 {
+func (v int8Value) Int8() int8 {
 	return v.v
 }
 
-func (v float32Value) Float64() float64 {
-	panic("cannot get float64 out of float32")
+func (v int8Value) Int16() int16 {
+	panic("cannot get int16 out of int8")
 }
 
-func (v float32Value) Int16() int16 {
-	panic("cannot get int16 out of float32")
+func (v int8Value) Int32() int32 {
+	panic("cannot get int32 out of int8")
 }
 
-func (v float32Value) Int32() int32 {
-	panic("cannot get int32 out of float32")
+func (v int8Value) Int64() int64 {
+	panic("cannot get int64 out of int8")
 }
 
-func (v float32Value) Int64() int64 {
-	panic("cannot get int64 out of float32")
+func (v int8Value) Uint8() uint8 {
+	panic("cannot get uint8 out of int8")
 }
 
-func (v float32Value) Int8() int8 {
-	panic("cannot get int8 out of float32")
+func (v int8Value) Uint16() uint16 {
+	panic("cannot get uint16 out of int8")
 }
 
-func (v float32Value) Uint16() uint16 {
-	panic("cannot get uint16 out of float32")
+func (v int8Value) Uint32() uint32 {
+	panic("cannot get uint32 out of int8")
 }
 
-func (v float32Value) Uint32() uint32 {
-	panic("cannot get uint32 out of float32")
+func (v int8Value) Uint64() uint64 {
+	panic("cannot get uint64 out of int8")
 }
 
-func (v float32Value) Uint64() uint64 {
-	panic("cannot get uint64 out of float32")
+func (v int8Value) Float32() float32 {
+	panic("cannot get float32 out of int8")
 }
 
-func (v float32Value) Uint8() uint8 {
-	panic("cannot get uint8 out of float32")
+func (v int8Value) Float64() float64 {
+	panic("cannot get float64 out of int8")
 }
 
-func (v float32Value) String() string {
-	return fmt.Sprintf("%v", v.Get())
+func (v int8Value) Bool() bool {
+	panic("cannot get bool out of int8")
 }
 
-type float64Value struct {
-	v float64
-}
-
-func (v float64Value) Type() Type {
-	return Float64
-}
-
-func (v float64Value) Get() interface{} {
-	return v.v
-}
-
-func (v float64Value) IsNull() bool {
-	return false
-}
-
-func (v float64Value) SizeBytes() int {
-	return 64
-}
-
-func (v float64Value) Bool() bool {
-	panic("cannot get bool out of float64")
-}
-
-func (v float64Value) Float32() float32 {
-	panic("cannot get float32 out of float64")
-}
-
-func (v float64Value) Float64() float64 {
-	return v.v
-}
-
-func (v float64Value) Int16() int16 {
-	panic("cannot get int16 out of float64")
-}
-
-func (v float64Value) Int32() int32 {
-	panic("cannot get int32 out of float64")
-}
-
-func (v float64Value) Int64() int64 {
-	panic("cannot get int64 out of float64")
-}
-
-func (v float64Value) Int8() int8 {
-	panic("cannot get int8 out of float64")
-}
-
-func (v float64Value) Uint16() uint16 {
-	panic("cannot get uint16 out of float64")
-}
-
-func (v float64Value) Uint32() uint32 {
-	panic("cannot get uint32 out of float64")
-}
-
-func (v float64Value) Uint64() uint64 {
-	panic("cannot get uint64 out of float64")
-}
-
-func (v float64Value) Uint8() uint8 {
-	panic("cannot get uint8 out of float64")
-}
-
-func (v float64Value) String() string {
+func (v int8Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
@@ -298,20 +234,12 @@ func (v int16Value) IsNull() bool {
 	return false
 }
 
-func (v int16Value) SizeBytes() int {
-	return 16
+func (v int16Value) Int() int {
+	panic("cannot get int out of int16")
 }
 
-func (v int16Value) Bool() bool {
-	panic("cannot get bool out of int16")
-}
-
-func (v int16Value) Float32() float32 {
-	panic("cannot get float32 out of int16")
-}
-
-func (v int16Value) Float64() float64 {
-	panic("cannot get float64 out of int16")
+func (v int16Value) Int8() int8 {
+	panic("cannot get int8 out of int16")
 }
 
 func (v int16Value) Int16() int16 {
@@ -326,8 +254,8 @@ func (v int16Value) Int64() int64 {
 	panic("cannot get int64 out of int16")
 }
 
-func (v int16Value) Int8() int8 {
-	panic("cannot get int8 out of int16")
+func (v int16Value) Uint8() uint8 {
+	panic("cannot get uint8 out of int16")
 }
 
 func (v int16Value) Uint16() uint16 {
@@ -342,8 +270,16 @@ func (v int16Value) Uint64() uint64 {
 	panic("cannot get uint64 out of int16")
 }
 
-func (v int16Value) Uint8() uint8 {
-	panic("cannot get uint8 out of int16")
+func (v int16Value) Float32() float32 {
+	panic("cannot get float32 out of int16")
+}
+
+func (v int16Value) Float64() float64 {
+	panic("cannot get float64 out of int16")
+}
+
+func (v int16Value) Bool() bool {
+	panic("cannot get bool out of int16")
 }
 
 func (v int16Value) String() string {
@@ -366,20 +302,12 @@ func (v int32Value) IsNull() bool {
 	return false
 }
 
-func (v int32Value) SizeBytes() int {
-	return 32
+func (v int32Value) Int() int {
+	panic("cannot get int out of int32")
 }
 
-func (v int32Value) Bool() bool {
-	panic("cannot get bool out of int32")
-}
-
-func (v int32Value) Float32() float32 {
-	panic("cannot get float32 out of int32")
-}
-
-func (v int32Value) Float64() float64 {
-	panic("cannot get float64 out of int32")
+func (v int32Value) Int8() int8 {
+	panic("cannot get int8 out of int32")
 }
 
 func (v int32Value) Int16() int16 {
@@ -394,8 +322,8 @@ func (v int32Value) Int64() int64 {
 	panic("cannot get int64 out of int32")
 }
 
-func (v int32Value) Int8() int8 {
-	panic("cannot get int8 out of int32")
+func (v int32Value) Uint8() uint8 {
+	panic("cannot get uint8 out of int32")
 }
 
 func (v int32Value) Uint16() uint16 {
@@ -410,8 +338,16 @@ func (v int32Value) Uint64() uint64 {
 	panic("cannot get uint64 out of int32")
 }
 
-func (v int32Value) Uint8() uint8 {
-	panic("cannot get uint8 out of int32")
+func (v int32Value) Float32() float32 {
+	panic("cannot get float32 out of int32")
+}
+
+func (v int32Value) Float64() float64 {
+	panic("cannot get float64 out of int32")
+}
+
+func (v int32Value) Bool() bool {
+	panic("cannot get bool out of int32")
 }
 
 func (v int32Value) String() string {
@@ -434,20 +370,12 @@ func (v int64Value) IsNull() bool {
 	return false
 }
 
-func (v int64Value) SizeBytes() int {
-	return 64
+func (v int64Value) Int() int {
+	panic("cannot get int out of int64")
 }
 
-func (v int64Value) Bool() bool {
-	panic("cannot get bool out of int64")
-}
-
-func (v int64Value) Float32() float32 {
-	panic("cannot get float32 out of int64")
-}
-
-func (v int64Value) Float64() float64 {
-	panic("cannot get float64 out of int64")
+func (v int64Value) Int8() int8 {
+	panic("cannot get int8 out of int64")
 }
 
 func (v int64Value) Int16() int16 {
@@ -462,8 +390,8 @@ func (v int64Value) Int64() int64 {
 	return v.v
 }
 
-func (v int64Value) Int8() int8 {
-	panic("cannot get int8 out of int64")
+func (v int64Value) Uint8() uint8 {
+	panic("cannot get uint8 out of int64")
 }
 
 func (v int64Value) Uint16() uint16 {
@@ -478,147 +406,87 @@ func (v int64Value) Uint64() uint64 {
 	panic("cannot get uint64 out of int64")
 }
 
-func (v int64Value) Uint8() uint8 {
-	panic("cannot get uint8 out of int64")
+func (v int64Value) Float32() float32 {
+	panic("cannot get float32 out of int64")
+}
+
+func (v int64Value) Float64() float64 {
+	panic("cannot get float64 out of int64")
+}
+
+func (v int64Value) Bool() bool {
+	panic("cannot get bool out of int64")
 }
 
 func (v int64Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
-type int8Value struct {
-	v int8
+type uint8Value struct {
+	v uint8
 }
 
-func (v int8Value) Type() Type {
-	return Int8
+func (v uint8Value) Type() Type {
+	return Uint8
 }
 
-func (v int8Value) Get() interface{} {
+func (v uint8Value) Get() interface{} {
 	return v.v
 }
 
-func (v int8Value) IsNull() bool {
+func (v uint8Value) IsNull() bool {
 	return false
 }
 
-func (v int8Value) SizeBytes() int {
-	return 8
+func (v uint8Value) Int() int {
+	panic("cannot get int out of uint8")
 }
 
-func (v int8Value) Bool() bool {
-	panic("cannot get bool out of int8")
+func (v uint8Value) Int8() int8 {
+	panic("cannot get int8 out of uint8")
 }
 
-func (v int8Value) Float32() float32 {
-	panic("cannot get float32 out of int8")
+func (v uint8Value) Int16() int16 {
+	panic("cannot get int16 out of uint8")
 }
 
-func (v int8Value) Float64() float64 {
-	panic("cannot get float64 out of int8")
+func (v uint8Value) Int32() int32 {
+	panic("cannot get int32 out of uint8")
 }
 
-func (v int8Value) Int16() int16 {
-	panic("cannot get int16 out of int8")
+func (v uint8Value) Int64() int64 {
+	panic("cannot get int64 out of uint8")
 }
 
-func (v int8Value) Int32() int32 {
-	panic("cannot get int32 out of int8")
-}
-
-func (v int8Value) Int64() int64 {
-	panic("cannot get int64 out of int8")
-}
-
-func (v int8Value) Int8() int8 {
+func (v uint8Value) Uint8() uint8 {
 	return v.v
 }
 
-func (v int8Value) Uint16() uint16 {
-	panic("cannot get uint16 out of int8")
+func (v uint8Value) Uint16() uint16 {
+	panic("cannot get uint16 out of uint8")
 }
 
-func (v int8Value) Uint32() uint32 {
-	panic("cannot get uint32 out of int8")
+func (v uint8Value) Uint32() uint32 {
+	panic("cannot get uint32 out of uint8")
 }
 
-func (v int8Value) Uint64() uint64 {
-	panic("cannot get uint64 out of int8")
+func (v uint8Value) Uint64() uint64 {
+	panic("cannot get uint64 out of uint8")
 }
 
-func (v int8Value) Uint8() uint8 {
-	panic("cannot get uint8 out of int8")
+func (v uint8Value) Float32() float32 {
+	panic("cannot get float32 out of uint8")
 }
 
-func (v int8Value) String() string {
-	return fmt.Sprintf("%v", v.Get())
+func (v uint8Value) Float64() float64 {
+	panic("cannot get float64 out of uint8")
 }
 
-type stringValue struct {
-	v string
+func (v uint8Value) Bool() bool {
+	panic("cannot get bool out of uint8")
 }
 
-func (v stringValue) Type() Type {
-	return String
-}
-
-func (v stringValue) Get() interface{} {
-	return v.v
-}
-
-func (v stringValue) IsNull() bool {
-	return false
-}
-
-func (v stringValue) SizeBytes() int {
-	return len(v.v)
-}
-
-func (v stringValue) Bool() bool {
-	panic("cannot get bool out of string")
-}
-
-func (v stringValue) Float32() float32 {
-	panic("cannot get float32 out of string")
-}
-
-func (v stringValue) Float64() float64 {
-	panic("cannot get float64 out of string")
-}
-
-func (v stringValue) Int16() int16 {
-	panic("cannot get int16 out of string")
-}
-
-func (v stringValue) Int32() int32 {
-	panic("cannot get int32 out of string")
-}
-
-func (v stringValue) Int64() int64 {
-	panic("cannot get int64 out of string")
-}
-
-func (v stringValue) Int8() int8 {
-	panic("cannot get int8 out of string")
-}
-
-func (v stringValue) Uint16() uint16 {
-	panic("cannot get uint16 out of string")
-}
-
-func (v stringValue) Uint32() uint32 {
-	panic("cannot get uint32 out of string")
-}
-
-func (v stringValue) Uint64() uint64 {
-	panic("cannot get uint64 out of string")
-}
-
-func (v stringValue) Uint8() uint8 {
-	panic("cannot get uint8 out of string")
-}
-
-func (v stringValue) String() string {
+func (v uint8Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
@@ -638,20 +506,12 @@ func (v uint16Value) IsNull() bool {
 	return false
 }
 
-func (v uint16Value) SizeBytes() int {
-	return 16
+func (v uint16Value) Int() int {
+	panic("cannot get int out of uint16")
 }
 
-func (v uint16Value) Bool() bool {
-	panic("cannot get bool out of uint16")
-}
-
-func (v uint16Value) Float32() float32 {
-	panic("cannot get float32 out of uint16")
-}
-
-func (v uint16Value) Float64() float64 {
-	panic("cannot get float64 out of uint16")
+func (v uint16Value) Int8() int8 {
+	panic("cannot get int8 out of uint16")
 }
 
 func (v uint16Value) Int16() int16 {
@@ -666,8 +526,8 @@ func (v uint16Value) Int64() int64 {
 	panic("cannot get int64 out of uint16")
 }
 
-func (v uint16Value) Int8() int8 {
-	panic("cannot get int8 out of uint16")
+func (v uint16Value) Uint8() uint8 {
+	panic("cannot get uint8 out of uint16")
 }
 
 func (v uint16Value) Uint16() uint16 {
@@ -682,8 +542,16 @@ func (v uint16Value) Uint64() uint64 {
 	panic("cannot get uint64 out of uint16")
 }
 
-func (v uint16Value) Uint8() uint8 {
-	panic("cannot get uint8 out of uint16")
+func (v uint16Value) Float32() float32 {
+	panic("cannot get float32 out of uint16")
+}
+
+func (v uint16Value) Float64() float64 {
+	panic("cannot get float64 out of uint16")
+}
+
+func (v uint16Value) Bool() bool {
+	panic("cannot get bool out of uint16")
 }
 
 func (v uint16Value) String() string {
@@ -706,20 +574,12 @@ func (v uint32Value) IsNull() bool {
 	return false
 }
 
-func (v uint32Value) SizeBytes() int {
-	return 32
+func (v uint32Value) Int() int {
+	panic("cannot get int out of uint32")
 }
 
-func (v uint32Value) Bool() bool {
-	panic("cannot get bool out of uint32")
-}
-
-func (v uint32Value) Float32() float32 {
-	panic("cannot get float32 out of uint32")
-}
-
-func (v uint32Value) Float64() float64 {
-	panic("cannot get float64 out of uint32")
+func (v uint32Value) Int8() int8 {
+	panic("cannot get int8 out of uint32")
 }
 
 func (v uint32Value) Int16() int16 {
@@ -734,8 +594,8 @@ func (v uint32Value) Int64() int64 {
 	panic("cannot get int64 out of uint32")
 }
 
-func (v uint32Value) Int8() int8 {
-	panic("cannot get int8 out of uint32")
+func (v uint32Value) Uint8() uint8 {
+	panic("cannot get uint8 out of uint32")
 }
 
 func (v uint32Value) Uint16() uint16 {
@@ -750,8 +610,16 @@ func (v uint32Value) Uint64() uint64 {
 	panic("cannot get uint64 out of uint32")
 }
 
-func (v uint32Value) Uint8() uint8 {
-	panic("cannot get uint8 out of uint32")
+func (v uint32Value) Float32() float32 {
+	panic("cannot get float32 out of uint32")
+}
+
+func (v uint32Value) Float64() float64 {
+	panic("cannot get float64 out of uint32")
+}
+
+func (v uint32Value) Bool() bool {
+	panic("cannot get bool out of uint32")
 }
 
 func (v uint32Value) String() string {
@@ -774,20 +642,12 @@ func (v uint64Value) IsNull() bool {
 	return false
 }
 
-func (v uint64Value) SizeBytes() int {
-	return 64
+func (v uint64Value) Int() int {
+	panic("cannot get int out of uint64")
 }
 
-func (v uint64Value) Bool() bool {
-	panic("cannot get bool out of uint64")
-}
-
-func (v uint64Value) Float32() float32 {
-	panic("cannot get float32 out of uint64")
-}
-
-func (v uint64Value) Float64() float64 {
-	panic("cannot get float64 out of uint64")
+func (v uint64Value) Int8() int8 {
+	panic("cannot get int8 out of uint64")
 }
 
 func (v uint64Value) Int16() int16 {
@@ -802,8 +662,8 @@ func (v uint64Value) Int64() int64 {
 	panic("cannot get int64 out of uint64")
 }
 
-func (v uint64Value) Int8() int8 {
-	panic("cannot get int8 out of uint64")
+func (v uint64Value) Uint8() uint8 {
+	panic("cannot get uint8 out of uint64")
 }
 
 func (v uint64Value) Uint16() uint16 {
@@ -818,79 +678,291 @@ func (v uint64Value) Uint64() uint64 {
 	return v.v
 }
 
-func (v uint64Value) Uint8() uint8 {
-	panic("cannot get uint8 out of uint64")
+func (v uint64Value) Float32() float32 {
+	panic("cannot get float32 out of uint64")
+}
+
+func (v uint64Value) Float64() float64 {
+	panic("cannot get float64 out of uint64")
+}
+
+func (v uint64Value) Bool() bool {
+	panic("cannot get bool out of uint64")
 }
 
 func (v uint64Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
-type uint8Value struct {
-	v uint8
+type float32Value struct {
+	v float32
 }
 
-func (v uint8Value) Type() Type {
-	return Uint8
+func (v float32Value) Type() Type {
+	return Float32
 }
 
-func (v uint8Value) Get() interface{} {
+func (v float32Value) Get() interface{} {
 	return v.v
 }
 
-func (v uint8Value) IsNull() bool {
+func (v float32Value) IsNull() bool {
 	return false
 }
 
-func (v uint8Value) SizeBytes() int {
-	return 8
+func (v float32Value) Int() int {
+	panic("cannot get int out of float32")
 }
 
-func (v uint8Value) Bool() bool {
-	panic("cannot get bool out of uint8")
+func (v float32Value) Int8() int8 {
+	panic("cannot get int8 out of float32")
 }
 
-func (v uint8Value) Float32() float32 {
-	panic("cannot get float32 out of uint8")
+func (v float32Value) Int16() int16 {
+	panic("cannot get int16 out of float32")
 }
 
-func (v uint8Value) Float64() float64 {
-	panic("cannot get float64 out of uint8")
+func (v float32Value) Int32() int32 {
+	panic("cannot get int32 out of float32")
 }
 
-func (v uint8Value) Int16() int16 {
-	panic("cannot get int16 out of uint8")
+func (v float32Value) Int64() int64 {
+	panic("cannot get int64 out of float32")
 }
 
-func (v uint8Value) Int32() int32 {
-	panic("cannot get int32 out of uint8")
+func (v float32Value) Uint8() uint8 {
+	panic("cannot get uint8 out of float32")
 }
 
-func (v uint8Value) Int64() int64 {
-	panic("cannot get int64 out of uint8")
+func (v float32Value) Uint16() uint16 {
+	panic("cannot get uint16 out of float32")
 }
 
-func (v uint8Value) Int8() int8 {
-	panic("cannot get int8 out of uint8")
+func (v float32Value) Uint32() uint32 {
+	panic("cannot get uint32 out of float32")
 }
 
-func (v uint8Value) Uint16() uint16 {
-	panic("cannot get uint16 out of uint8")
+func (v float32Value) Uint64() uint64 {
+	panic("cannot get uint64 out of float32")
 }
 
-func (v uint8Value) Uint32() uint32 {
-	panic("cannot get uint32 out of uint8")
-}
-
-func (v uint8Value) Uint64() uint64 {
-	panic("cannot get uint64 out of uint8")
-}
-
-func (v uint8Value) Uint8() uint8 {
+func (v float32Value) Float32() float32 {
 	return v.v
 }
 
-func (v uint8Value) String() string {
+func (v float32Value) Float64() float64 {
+	panic("cannot get float64 out of float32")
+}
+
+func (v float32Value) Bool() bool {
+	panic("cannot get bool out of float32")
+}
+
+func (v float32Value) String() string {
+	return fmt.Sprintf("%v", v.Get())
+}
+
+type float64Value struct {
+	v float64
+}
+
+func (v float64Value) Type() Type {
+	return Float64
+}
+
+func (v float64Value) Get() interface{} {
+	return v.v
+}
+
+func (v float64Value) IsNull() bool {
+	return false
+}
+
+func (v float64Value) Int() int {
+	panic("cannot get int out of float64")
+}
+
+func (v float64Value) Int8() int8 {
+	panic("cannot get int8 out of float64")
+}
+
+func (v float64Value) Int16() int16 {
+	panic("cannot get int16 out of float64")
+}
+
+func (v float64Value) Int32() int32 {
+	panic("cannot get int32 out of float64")
+}
+
+func (v float64Value) Int64() int64 {
+	panic("cannot get int64 out of float64")
+}
+
+func (v float64Value) Uint8() uint8 {
+	panic("cannot get uint8 out of float64")
+}
+
+func (v float64Value) Uint16() uint16 {
+	panic("cannot get uint16 out of float64")
+}
+
+func (v float64Value) Uint32() uint32 {
+	panic("cannot get uint32 out of float64")
+}
+
+func (v float64Value) Uint64() uint64 {
+	panic("cannot get uint64 out of float64")
+}
+
+func (v float64Value) Float32() float32 {
+	panic("cannot get float32 out of float64")
+}
+
+func (v float64Value) Float64() float64 {
+	return v.v
+}
+
+func (v float64Value) Bool() bool {
+	panic("cannot get bool out of float64")
+}
+
+func (v float64Value) String() string {
+	return fmt.Sprintf("%v", v.Get())
+}
+
+type stringValue struct {
+	v string
+}
+
+func (v stringValue) Type() Type {
+	return String
+}
+
+func (v stringValue) Get() interface{} {
+	return v.v
+}
+
+func (v stringValue) IsNull() bool {
+	return false
+}
+
+func (v stringValue) Int() int {
+	panic("cannot get int out of string")
+}
+
+func (v stringValue) Int8() int8 {
+	panic("cannot get int8 out of string")
+}
+
+func (v stringValue) Int16() int16 {
+	panic("cannot get int16 out of string")
+}
+
+func (v stringValue) Int32() int32 {
+	panic("cannot get int32 out of string")
+}
+
+func (v stringValue) Int64() int64 {
+	panic("cannot get int64 out of string")
+}
+
+func (v stringValue) Uint8() uint8 {
+	panic("cannot get uint8 out of string")
+}
+
+func (v stringValue) Uint16() uint16 {
+	panic("cannot get uint16 out of string")
+}
+
+func (v stringValue) Uint32() uint32 {
+	panic("cannot get uint32 out of string")
+}
+
+func (v stringValue) Uint64() uint64 {
+	panic("cannot get uint64 out of string")
+}
+
+func (v stringValue) Float32() float32 {
+	panic("cannot get float32 out of string")
+}
+
+func (v stringValue) Float64() float64 {
+	panic("cannot get float64 out of string")
+}
+
+func (v stringValue) Bool() bool {
+	panic("cannot get bool out of string")
+}
+
+func (v stringValue) String() string {
+	return fmt.Sprintf("%v", v.Get())
+}
+
+type boolValue struct {
+	v bool
+}
+
+func (v boolValue) Type() Type {
+	return Bool
+}
+
+func (v boolValue) Get() interface{} {
+	return v.v
+}
+
+func (v boolValue) IsNull() bool {
+	return false
+}
+
+func (v boolValue) Int() int {
+	panic("cannot get int out of bool")
+}
+
+func (v boolValue) Int8() int8 {
+	panic("cannot get int8 out of bool")
+}
+
+func (v boolValue) Int16() int16 {
+	panic("cannot get int16 out of bool")
+}
+
+func (v boolValue) Int32() int32 {
+	panic("cannot get int32 out of bool")
+}
+
+func (v boolValue) Int64() int64 {
+	panic("cannot get int64 out of bool")
+}
+
+func (v boolValue) Uint8() uint8 {
+	panic("cannot get uint8 out of bool")
+}
+
+func (v boolValue) Uint16() uint16 {
+	panic("cannot get uint16 out of bool")
+}
+
+func (v boolValue) Uint32() uint32 {
+	panic("cannot get uint32 out of bool")
+}
+
+func (v boolValue) Uint64() uint64 {
+	panic("cannot get uint64 out of bool")
+}
+
+func (v boolValue) Float32() float32 {
+	panic("cannot get float32 out of bool")
+}
+
+func (v boolValue) Float64() float64 {
+	panic("cannot get float64 out of bool")
+}
+
+func (v boolValue) Bool() bool {
+	return v.v
+}
+
+func (v boolValue) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
@@ -899,32 +971,34 @@ func New(v interface{}) Value {
 		panic("cannot create value from nil")
 	}
 	switch v := v.(type) {
-	case bool:
-		return boolValue{v: v}
-	case float32:
-		return float32Value{v: v}
-	case float64:
-		return float64Value{v: v}
+	case int:
+		return intValue{v: v}
+	case int8:
+		return int8Value{v: v}
 	case int16:
 		return int16Value{v: v}
 	case int32:
 		return int32Value{v: v}
 	case int64:
 		return int64Value{v: v}
-	case int8:
-		return int8Value{v: v}
-	case string:
-		return stringValue{v: v}
+	case uint8:
+		return uint8Value{v: v}
 	case uint16:
 		return uint16Value{v: v}
 	case uint32:
 		return uint32Value{v: v}
 	case uint64:
 		return uint64Value{v: v}
-	case uint8:
-		return uint8Value{v: v}
+	case float32:
+		return float32Value{v: v}
+	case float64:
+		return float64Value{v: v}
+	case string:
+		return stringValue{v: v}
+	case bool:
+		return boolValue{v: v}
 	default:
-		panic(fmt.Errorf("cannot create value from type %T", v))
+		return goObjectValue{v: v}
 	}
 }
 
@@ -952,16 +1026,12 @@ func (v nullValue) SizeBytes() int {
 	return 0
 }
 
-func (v nullValue) Bool() bool {
-	panic("cannot get bool out of null value")
+func (v nullValue) Int() int {
+	panic("cannot get int out of null value")
 }
 
-func (v nullValue) Float32() float32 {
-	panic("cannot get float32 out of null value")
-}
-
-func (v nullValue) Float64() float64 {
-	panic("cannot get float64 out of null value")
+func (v nullValue) Int8() int8 {
+	panic("cannot get int8 out of null value")
 }
 
 func (v nullValue) Int16() int16 {
@@ -976,8 +1046,8 @@ func (v nullValue) Int64() int64 {
 	panic("cannot get int64 out of null value")
 }
 
-func (v nullValue) Int8() int8 {
-	panic("cannot get int8 out of null value")
+func (v nullValue) Uint8() uint8 {
+	panic("cannot get uint8 out of null value")
 }
 
 func (v nullValue) Uint16() uint16 {
@@ -992,10 +1062,86 @@ func (v nullValue) Uint64() uint64 {
 	panic("cannot get uint64 out of null value")
 }
 
-func (v nullValue) Uint8() uint8 {
-	panic("cannot get uint8 out of null value")
+func (v nullValue) Float32() float32 {
+	panic("cannot get float32 out of null value")
+}
+
+func (v nullValue) Float64() float64 {
+	panic("cannot get float64 out of null value")
+}
+
+func (v nullValue) Bool() bool {
+	panic("cannot get bool out of null value")
 }
 
 func (v nullValue) String() string {
-	return "nil"
+	return fmt.Sprintf("nil(%v)", v.t)
+}
+
+type goObjectValue struct {
+	v interface{}
+}
+
+func (v goObjectValue) Type() Type {
+	return Object
+}
+
+func (v goObjectValue) Get() interface{} {
+	return v.v
+}
+
+func (v goObjectValue) IsNull() bool {
+	return true
+}
+
+func (v goObjectValue) Int() int {
+	panic("cannot get int out of generic Go object value")
+}
+
+func (v goObjectValue) Int8() int8 {
+	panic("cannot get int8 out of generic Go object value")
+}
+
+func (v goObjectValue) Int16() int16 {
+	panic("cannot get int16 out of generic Go object value")
+}
+
+func (v goObjectValue) Int32() int32 {
+	panic("cannot get int32 out of generic Go object value")
+}
+
+func (v goObjectValue) Int64() int64 {
+	panic("cannot get int64 out of generic Go object value")
+}
+
+func (v goObjectValue) Uint8() uint8 {
+	panic("cannot get uint8 out of generic Go object value")
+}
+
+func (v goObjectValue) Uint16() uint16 {
+	panic("cannot get uint16 out of generic Go object value")
+}
+
+func (v goObjectValue) Uint32() uint32 {
+	panic("cannot get uint32 out of generic Go object value")
+}
+
+func (v goObjectValue) Uint64() uint64 {
+	panic("cannot get uint64 out of generic Go object value")
+}
+
+func (v goObjectValue) Float32() float32 {
+	panic("cannot get float32 out of generic Go object value")
+}
+
+func (v goObjectValue) Float64() float64 {
+	panic("cannot get float64 out of generic Go object value")
+}
+
+func (v goObjectValue) Bool() bool {
+	panic("cannot get bool out of generic Go object value")
+}
+
+func (v goObjectValue) String() string {
+	return fmt.Sprintf("%v", v.v)
 }

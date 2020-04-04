@@ -31,7 +31,7 @@ func (m meta) IsNull() bool {
 	panic("implement me")
 }
 
-func (m meta) SizeBytes() int {
+func (m meta) Int() int {
 	panic("implement me")
 }
 
