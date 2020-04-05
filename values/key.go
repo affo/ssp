@@ -4,7 +4,6 @@ type Key uint64
 
 type KeyedValue interface {
 	Value
-	Unwrap() Value
 	Key() Key
 }
 
@@ -23,4 +22,13 @@ func (v keyedValue) Key() Key {
 
 func (v keyedValue) Unwrap() Value {
 	return v.Value
+}
+
+func GetKey(v Value) Key {
+	for {
+		if wk, ok := v.(KeyedValue); ok {
+			return wk.Key()
+		}
+		v = v.Unwrap()
+	}
 }

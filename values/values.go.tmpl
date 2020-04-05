@@ -29,6 +29,9 @@ type Value interface {
 	Type() Type
 	Get() interface{}
 	IsNull() bool
+	// Values are meant to be decorated.
+	// Unwrap() helps in accessing underlying values.
+	Unwrap() Value
 	{{range . -}}
     {{title .}}() {{.}}
   {{end}}
@@ -49,6 +52,10 @@ func (v {{$t}}Value) Get() interface{} {
 
 func (v {{$t}}Value) IsNull() bool {
   return false
+}
+
+func (v {{$t}}Value) Unwrap() Value {
+	panic("value of type {{$t}} cannot be unwrapped")
 }
 
 {{range $tt := $}}
@@ -102,8 +109,8 @@ func (v nullValue) IsNull() bool {
 	return true
 }
 
-func (v nullValue) SizeBytes() int {
-  return 0
+func (v nullValue) Unwrap() Value {
+	panic("null value cannot be unwrapped")
 }
 
 {{range .}}
@@ -132,6 +139,10 @@ func (v goObjectValue) Get() interface{} {
 
 func (v goObjectValue) IsNull() bool {
 	return true
+}
+
+func (v goObjectValue) Unwrap() Value {
+	panic("object value cannot be unwrapped")
 }
 
 {{range .}}

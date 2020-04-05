@@ -10,54 +10,61 @@ import (
 	"github.com/affo/ssp/values"
 )
 
+func Execute(ctx context.Context) error {
+	e := &Engine{}
+	return e.Execute(ctx)
+}
+
 type Engine struct{}
 
 func (e *Engine) Execute(ctx context.Context) error {
 	g := GetGraph(ctx)
 	ops := make(map[Node]*ParallelOperator)
-	ins := make(map[Node][]*infiniteStream)
-	outs := make(map[Node][]*infiniteStream)
+	ins := make(map[Node][]Node)
 	Walk(g, func(a *Arch) {
 		if from := a.From(); from != nil {
 			if _, ok := ops[from]; !ok {
 				par := from.GetParallelism()
-				is := NewInfiniteStream()
-				sc := newSharedCollector(is, par)
 				ops[from] = NewParallelOperator(par, func() *Operator {
-					return NewOperator(from, sc)
+					return NewOperator(from)
 				})
-				if _, ok := outs[from]; !ok {
-					outs[from] = make([]*infiniteStream, 0)
-				}
-				outs[from] = append(outs[from], is)
 			}
 		}
 		if to := a.To(); to != nil {
 			if _, ok := ops[to]; !ok {
 				par := to.GetParallelism()
-				is := NewInfiniteStream()
-				sc := newSharedCollector(is, par)
 				ops[to] = NewParallelOperator(par, func() *Operator {
-					return NewOperator(to, sc)
+					return NewOperator(to)
 				}, WithInKeySelector(a.ks))
-				if _, ok := outs[to]; !ok {
-					outs[to] = make([]*infiniteStream, 0)
-				}
-				outs[to] = append(outs[to], is)
 			}
 		}
 		if from, to := a.From(), a.To(); from != nil && to != nil {
 			if _, ok := ins[to]; !ok {
-				ins[to] = make([]*infiniteStream, 0)
+				ins[to] = make([]Node, 0, 1)
 			}
-			ins[to] = outs[from]
+			ins[to] = append(ins[to], from)
 		}
 	})
 
+	outs := make(map[Node][]Collector)
 	for n, in := range ins {
-		ops[n].In(newDataStreams(in...), func() Transport {
+		inss := make([]*infiniteStream, 0, len(in))
+		to := ops[n]
+		for _, from := range in {
+			is := NewInfiniteStream()
+			inss = append(inss, is)
+			if _, ok := outs[from]; !ok {
+				outs[from] = make([]Collector, 0, 1)
+			}
+			outs[from] = append(outs[from], is)
+		}
+		to.In(newDataStreams(inss...), func() Transport {
 			return NewInfiniteStream()
 		})
+	}
+
+	for n, out := range outs {
+		ops[n].Out(out)
 	}
 
 	for _, op := range ops {
@@ -94,20 +101,23 @@ func newDataStreams(ss ...*infiniteStream) *dataStreams {
 }
 
 func (d *dataStreams) Next() values.Value {
+	if n := atomic.LoadInt64(&d.n); n == 0 {
+		for _, s := range d.ss {
+			s.close()
+		}
+		return nil
+	}
 	i, value, ok := reflect.Select(d.cases)
 	// !ok means the channel has been closed.
 	if !ok {
-		panic("unexpected channel close")
+		panic("unexpected close")
 	}
 	v := value.Interface().(values.Value)
 	if v.Type() == values.Close {
-		d.ss[i].close()
-		if n := atomic.AddInt64(&d.n, -1); n == 0 {
-			return nil
-		}
+		atomic.AddInt64(&d.n, -1)
 		return d.Next()
 	}
-	return v
+	return values.NewValueWithSource(values.Source(i), v)
 }
 
 // sharedCollector de-multiplies Close signals.
@@ -133,6 +143,23 @@ func (s *sharedCollector) Collect(v values.Value) {
 	s.c.Collect(v)
 }
 
+// broadcastCollector broadcasts values to multiple collectors.
+type broadcastCollector struct {
+	cs []Collector
+}
+
+func newBroadCastCollector(cs []Collector) broadcastCollector {
+	return broadcastCollector{
+		cs: cs,
+	}
+}
+
+func (s broadcastCollector) Collect(v values.Value) {
+	for _, c := range s.cs {
+		c.Collect(v)
+	}
+}
+
 type Operator struct {
 	bn  Node
 	ns  map[values.Key]Node
@@ -143,17 +170,20 @@ type Operator struct {
 	err error
 }
 
-func NewOperator(n Node, out Collector) *Operator {
+func NewOperator(n Node) *Operator {
 	op := &Operator{
-		bn:  n,
-		ns:  make(map[values.Key]Node),
-		out: out,
+		bn: n,
+		ns: make(map[values.Key]Node),
 	}
 	return op
 }
 
 func (o *Operator) In(ds DataStream) {
 	o.in = ds
+}
+
+func (o *Operator) Out(c Collector) {
+	o.out = c
 }
 
 func (o *Operator) getNode(key values.Key) Node {
@@ -174,14 +204,7 @@ func (o *Operator) do() error {
 		if v == nil {
 			return nil
 		}
-		var n Node
-		if kv, ok := v.(values.KeyedValue); ok {
-			// The keyed value has already been prepared for us.
-			n = o.getNode(kv.Key())
-		} else {
-			// Pick the first node available:
-			n = o.getNode(0)
-		}
+		n := o.getNode(values.GetKey(v))
 		if err := n.Do(o.out, v); err != nil {
 			return err
 		}
@@ -192,8 +215,10 @@ func (o *Operator) Open() {
 	o.wg.Add(1)
 	go func() {
 		o.err = o.do()
-		// Propagate close.
-		SendClose(o.out)
+		// Propagate close. Note that sinks have nil collector.
+		if o.out != nil {
+			SendClose(o.out)
+		}
 		o.wg.Done()
 	}()
 }
@@ -238,6 +263,14 @@ func (o *ParallelOperator) In(ds DataStream, f func() Transport) {
 	ps := NewPartitionedStream(len(o.ops), o.opts.inKs, ds, f)
 	for i, o := range o.ops {
 		o.In(ps.Stream(i))
+	}
+}
+
+func (o *ParallelOperator) Out(cs []Collector) {
+	bc := newBroadCastCollector(cs)
+	sc := newSharedCollector(bc, len(o.ops))
+	for _, o := range o.ops {
+		o.Out(sc)
 	}
 }
 
@@ -286,10 +319,6 @@ func (s *partitionedStream) Stream(partition int) DataStream {
 
 func (s *partitionedStream) do() {
 	for v := s.ds.Next(); v != nil; v = s.ds.Next() {
-		if kv, ok := v.(values.KeyedValue); ok {
-			// Remove previous keying if any.
-			v = kv.Unwrap()
-		}
 		// Apply new keying.
 		k := s.ks.GetKey(v)
 		kv := values.NewKeyedValue(k, v)

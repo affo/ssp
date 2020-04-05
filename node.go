@@ -16,7 +16,7 @@ type Node interface {
 	GetName() string
 }
 
-type NodeFunc func(state values.Value, collector Collector, v values.Value) (updatedState values.Value, e error)
+type NodeFunc func(state values.Value, collector Collector, v values.Value) (values.Value, error)
 
 type AnonymousNode struct {
 	state0 values.Value
@@ -93,7 +93,7 @@ func (n *AnonymousNode) String() string {
 func NewLogSink(t values.Type) (Node, *values.List) {
 	s := values.NewList(t)
 	return NewStatefulNode(s,
-		func(state values.Value, collector Collector, v values.Value) (updatedState values.Value, e error) {
+		func(state values.Value, collector Collector, v values.Value) (values.Value, error) {
 			err := state.(*values.List).AddValue(v)
 			return state, err
 		}), s

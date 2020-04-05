@@ -39,6 +39,10 @@ func (l *List) IsNull() bool {
 	panic("implement me")
 }
 
+func (l *List) Unwrap() Value {
+	panic("list cannot be unwrapped")
+}
+
 func (l *List) Int() int {
 	panic("implement me")
 }

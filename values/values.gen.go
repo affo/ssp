@@ -67,6 +67,9 @@ type Value interface {
 	Type() Type
 	Get() interface{}
 	IsNull() bool
+	// Values are meant to be decorated.
+	// Unwrap() helps in accessing underlying values.
+	Unwrap() Value
 	Int() int
 	Int8() int8
 	Int16() int16
@@ -96,6 +99,10 @@ func (v intValue) Get() interface{} {
 
 func (v intValue) IsNull() bool {
 	return false
+}
+
+func (v intValue) Unwrap() Value {
+	panic("value of type int cannot be unwrapped")
 }
 
 func (v intValue) Int() int {
@@ -166,6 +173,10 @@ func (v int8Value) IsNull() bool {
 	return false
 }
 
+func (v int8Value) Unwrap() Value {
+	panic("value of type int8 cannot be unwrapped")
+}
+
 func (v int8Value) Int() int {
 	panic("cannot get int out of int8")
 }
@@ -232,6 +243,10 @@ func (v int16Value) Get() interface{} {
 
 func (v int16Value) IsNull() bool {
 	return false
+}
+
+func (v int16Value) Unwrap() Value {
+	panic("value of type int16 cannot be unwrapped")
 }
 
 func (v int16Value) Int() int {
@@ -302,6 +317,10 @@ func (v int32Value) IsNull() bool {
 	return false
 }
 
+func (v int32Value) Unwrap() Value {
+	panic("value of type int32 cannot be unwrapped")
+}
+
 func (v int32Value) Int() int {
 	panic("cannot get int out of int32")
 }
@@ -368,6 +387,10 @@ func (v int64Value) Get() interface{} {
 
 func (v int64Value) IsNull() bool {
 	return false
+}
+
+func (v int64Value) Unwrap() Value {
+	panic("value of type int64 cannot be unwrapped")
 }
 
 func (v int64Value) Int() int {
@@ -438,6 +461,10 @@ func (v uint8Value) IsNull() bool {
 	return false
 }
 
+func (v uint8Value) Unwrap() Value {
+	panic("value of type uint8 cannot be unwrapped")
+}
+
 func (v uint8Value) Int() int {
 	panic("cannot get int out of uint8")
 }
@@ -504,6 +531,10 @@ func (v uint16Value) Get() interface{} {
 
 func (v uint16Value) IsNull() bool {
 	return false
+}
+
+func (v uint16Value) Unwrap() Value {
+	panic("value of type uint16 cannot be unwrapped")
 }
 
 func (v uint16Value) Int() int {
@@ -574,6 +605,10 @@ func (v uint32Value) IsNull() bool {
 	return false
 }
 
+func (v uint32Value) Unwrap() Value {
+	panic("value of type uint32 cannot be unwrapped")
+}
+
 func (v uint32Value) Int() int {
 	panic("cannot get int out of uint32")
 }
@@ -640,6 +675,10 @@ func (v uint64Value) Get() interface{} {
 
 func (v uint64Value) IsNull() bool {
 	return false
+}
+
+func (v uint64Value) Unwrap() Value {
+	panic("value of type uint64 cannot be unwrapped")
 }
 
 func (v uint64Value) Int() int {
@@ -710,6 +749,10 @@ func (v float32Value) IsNull() bool {
 	return false
 }
 
+func (v float32Value) Unwrap() Value {
+	panic("value of type float32 cannot be unwrapped")
+}
+
 func (v float32Value) Int() int {
 	panic("cannot get int out of float32")
 }
@@ -776,6 +819,10 @@ func (v float64Value) Get() interface{} {
 
 func (v float64Value) IsNull() bool {
 	return false
+}
+
+func (v float64Value) Unwrap() Value {
+	panic("value of type float64 cannot be unwrapped")
 }
 
 func (v float64Value) Int() int {
@@ -846,6 +893,10 @@ func (v stringValue) IsNull() bool {
 	return false
 }
 
+func (v stringValue) Unwrap() Value {
+	panic("value of type string cannot be unwrapped")
+}
+
 func (v stringValue) Int() int {
 	panic("cannot get int out of string")
 }
@@ -912,6 +963,10 @@ func (v boolValue) Get() interface{} {
 
 func (v boolValue) IsNull() bool {
 	return false
+}
+
+func (v boolValue) Unwrap() Value {
+	panic("value of type bool cannot be unwrapped")
 }
 
 func (v boolValue) Int() int {
@@ -1022,8 +1077,8 @@ func (v nullValue) IsNull() bool {
 	return true
 }
 
-func (v nullValue) SizeBytes() int {
-	return 0
+func (v nullValue) Unwrap() Value {
+	panic("null value cannot be unwrapped")
 }
 
 func (v nullValue) Int() int {
@@ -1092,6 +1147,10 @@ func (v goObjectValue) Get() interface{} {
 
 func (v goObjectValue) IsNull() bool {
 	return true
+}
+
+func (v goObjectValue) Unwrap() Value {
+	panic("object value cannot be unwrapped")
 }
 
 func (v goObjectValue) Int() int {

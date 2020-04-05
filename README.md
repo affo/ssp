@@ -11,9 +11,8 @@ __TODO__
    - [x] parallel operators
    - [x] partitioned streams
    - [x] remove type checks and input stream check
-   - [ ] (multiple outputs)
    - [x] fix API to be cleaner
-   - [ ] distinguish records from different streams
+   - [x] distinguish records from different streams
    - [ ] deeper testing
    - [ ] add timestamps to records
    - [ ] implement tuples
@@ -28,3 +27,5 @@ __TODO__
 __Optional__
 
  - [ ] generate graph as command?
+ - [ ] multiple outputs for nodes (with tags?)
+

@@ -22,8 +22,9 @@ func TestOperator(t *testing.T) {
 	out := NewInfiniteStream()
 	// Need some buffering to avoid deadlock because we consume at the end.
 	out.bufferSize = 10
-	o := NewOperator(n, out)
+	o := NewOperator(n)
 	o.In(in)
+	o.Out(out)
 	o.Open()
 	defer func() {
 		if err := o.Close(); err != nil {
@@ -31,10 +32,11 @@ func TestOperator(t *testing.T) {
 		}
 	}()
 
-	in.Collect(values.New("hello"))
-	in.Collect(values.New("this"))
-	in.Collect(values.New("is"))
-	in.Collect(values.New("ssp"))
+	// Must set a key, even if useless.
+	in.Collect(values.NewKeyedValue(0, values.New("hello")))
+	in.Collect(values.NewKeyedValue(0, values.New("this")))
+	in.Collect(values.NewKeyedValue(0, values.New("is")))
+	in.Collect(values.NewKeyedValue(0, values.New("ssp")))
 	SendClose(in)
 
 	want := []string{"HELLO", "THIS", "IS", "SSP"}
@@ -61,11 +63,12 @@ func TestParallelOperator(t *testing.T) {
 				count := state.Int64() + 1
 				collector.Collect(values.New(fmt.Sprintf("%v: %d", v, count)))
 				return values.New(count), nil
-			}), out)
+			}))
 	}, WithInKeySelector(ks))
 	o.In(in, func() Transport {
 		return NewInfiniteStream()
 	})
+	o.Out([]Collector{out})
 	o.Open()
 	defer func() {
 		SendClose(in)
@@ -138,8 +141,7 @@ func TestEngine(t *testing.T) {
 	sink, log := NewLogSink(values.Int64)
 	p.Connect(ctx, sink)
 
-	e := &Engine{}
-	if err := e.Execute(ctx); err != nil {
+	if err := Execute(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -174,7 +176,7 @@ func TestParallelEngine(t *testing.T) {
 			collector.Collect(values.New(v))
 		}
 		return nil
-	}).
+	}).SetName("source").
 		Out().
 		KeyBy(NewStringValueKeySelector(func(v values.Value) string {
 			return v.String()
@@ -190,10 +192,9 @@ func TestParallelEngine(t *testing.T) {
 		Out()
 
 	sink, log := NewLogSink(values.String)
-	p.Connect(ctx, sink)
+	p.Connect(ctx, sink.SetName("sink"))
 
-	e := &Engine{}
-	if err := e.Execute(ctx); err != nil {
+	if err := Execute(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -214,6 +215,89 @@ func TestParallelEngine(t *testing.T) {
 	for _, v := range log.GetValues() {
 		got = append(got, v.String())
 	}
+	sort.Strings(got)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
+	}
+}
+
+func TestParallelEngine_MultipleInputs(t *testing.T) {
+	defer leaktest.Check(t)()
+
+	ctx := Context()
+	source := NewNode(func(collector Collector, v values.Value) error {
+		in := []string{
+			"hello",
+			"this",
+			"is",
+			"ssp",
+		}
+		for _, v := range in {
+			collector.Collect(values.New(v))
+		}
+		return nil
+	}).SetName("source").Out()
+
+	upper := source.
+		Connect(ctx, NewNode(func(collector Collector, v values.Value) error {
+			collector.Collect(values.New(strings.ToUpper(v.String())))
+			return nil
+		})).SetName("upper")
+
+	count := source.
+		Connect(ctx, NewNode(func(collector Collector, v values.Value) error {
+			collector.Collect(values.New(len(v.String())))
+			return nil
+		})).SetName("count")
+
+	type state struct {
+		s1 []values.Value
+		s2 []values.Value
+	}
+	align := NewStatefulNode(values.New(&state{}), func(sv values.Value, collector Collector, v values.Value) (values.Value, error) {
+		s := sv.Get().(*state)
+		source := values.GetSource(v)
+		if source == 0 {
+			if len(s.s2) > 0 {
+				ov := s.s2[0]
+				s.s2 = s.s2[1:]
+				collector.Collect(values.New(fmt.Sprintf("%v: %v", v, ov)))
+			} else {
+				s.s1 = append(s.s1, v)
+			}
+		} else {
+			if len(s.s1) > 0 {
+				ov := s.s1[0]
+				s.s1 = s.s1[1:]
+				collector.Collect(values.New(fmt.Sprintf("%v: %v", ov, v)))
+			} else {
+				s.s2 = append(s.s2, v)
+			}
+		}
+		return sv, nil
+	}).SetName("aligner")
+
+	upper.Out().Connect(ctx, align)
+	aligned := count.Out().Connect(ctx, align).Out()
+
+	sink, log := NewLogSink(values.String)
+	aligned.Connect(ctx, sink.SetName("sink"))
+
+	if err := Execute(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		"HELLO: 5",
+		"THIS: 4",
+		"IS: 2",
+		"SSP: 3",
+	}
+	var got []string
+	for _, v := range log.GetValues() {
+		got = append(got, v.String())
+	}
+	sort.Strings(want)
 	sort.Strings(got)
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected result -want/+got:\n\t%s", diff)

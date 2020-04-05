@@ -31,6 +31,10 @@ func (m meta) IsNull() bool {
 	panic("implement me")
 }
 
+func (m meta) Unwrap() Value {
+	panic("list cannot be unwrapped")
+}
+
 func (m meta) Int() int {
 	panic("implement me")
 }
