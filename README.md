@@ -14,7 +14,8 @@ __TODO__
    - [x] fix API to be cleaner
    - [x] distinguish records from different streams
    - [x] deeper testing
-   - [ ] word count benchmark
+   - [x] word count benchmark
+   - [ ] add some simple planning
  - [ ] manage time
    - [ ] add timestamps to records
    - [ ] watermarks
