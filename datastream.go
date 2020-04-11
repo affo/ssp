@@ -1,6 +1,8 @@
 package ssp
 
 import (
+	"sync/atomic"
+
 	"github.com/affo/ssp/values"
 )
 
@@ -15,7 +17,7 @@ type sliceStream struct {
 	vs []values.Value
 }
 
-func NewIntValues(ints ...int64) []values.Value {
+func NewIntValues(ints ...int) []values.Value {
 	vs := make([]values.Value, 0, len(ints))
 	for _, i := range ints {
 		vs = append(vs, values.New(i))
@@ -43,7 +45,7 @@ const defaultBufferSize = 1024
 type infiniteStream struct {
 	s          chan values.Value
 	bufferSize int
-	closed     bool
+	closed     int64
 }
 
 func NewInfiniteStream() *infiniteStream {
@@ -58,12 +60,19 @@ func (s *infiniteStream) Collect(v values.Value) {
 	s.s <- v
 }
 
+func (s *infiniteStream) isClosed() bool {
+	return atomic.LoadInt64(&s.closed) != 0
+}
+
 func (s *infiniteStream) close() {
-	s.closed = true
+	atomic.StoreInt64(&s.closed, 1)
 	close(s.s)
 }
 
 func (s *infiniteStream) Next() values.Value {
+	if s.isClosed() {
+		return nil
+	}
 	v := <-s.s
 	if v.Type() == values.Close {
 		s.close()

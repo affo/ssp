@@ -13,7 +13,7 @@ __TODO__
    - [x] remove type checks and input stream check
    - [x] fix API to be cleaner
    - [x] distinguish records from different streams
-   - [ ] deeper testing
+   - [x] deeper testing
    - [ ] word count benchmark
  - [ ] manage time
    - [ ] add timestamps to records

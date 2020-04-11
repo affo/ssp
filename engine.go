@@ -102,9 +102,6 @@ func newDataStreams(ss ...*infiniteStream) *dataStreams {
 
 func (d *dataStreams) Next() values.Value {
 	if n := atomic.LoadInt64(&d.n); n == 0 {
-		for _, s := range d.ss {
-			s.close()
-		}
 		return nil
 	}
 	i, value, ok := reflect.Select(d.cases)

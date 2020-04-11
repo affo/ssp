@@ -221,6 +221,191 @@ func TestParallelEngine(t *testing.T) {
 	}
 }
 
+func TestDataStreams(t *testing.T) {
+	setup := func() (*dataStreams, int) {
+		iss := make([]*infiniteStream, 10)
+		for i := 0; i < len(iss); i++ {
+			iss[i] = NewInfiniteStream()
+		}
+		return newDataStreams(iss...), len(iss)
+	}
+
+	t.Run("happy path", func(t *testing.T) {
+		dss, ns := setup()
+
+		for i := 0; i < ns; i++ {
+			dss.ss[i].Collect(values.New(i))
+		}
+
+		for i := 0; i < ns; i++ {
+			v := dss.Next()
+			if val, source := v.Int(), int(values.GetSource(v)); val != source {
+				t.Errorf("unexpected val/source: %d/%d", val, source)
+			}
+		}
+
+		for i := 0; i < ns; i++ {
+			SendClose(dss.ss[i])
+		}
+	})
+
+	t.Run("partial close", func(t *testing.T) {
+		dss, ns := setup()
+
+		for i := 0; i < ns; i++ {
+			dss.ss[i].Collect(values.New(i))
+			SendClose(dss.ss[i])
+		}
+
+		for i := 0; i < ns; i++ {
+			v := dss.Next()
+			if val, source := v.Int(), int(values.GetSource(v)); val != source {
+				t.Errorf("unexpected val/source: %d/%d", val, source)
+			}
+		}
+
+		for i := 0; i < ns; i++ {
+			v := dss.Next()
+			if v != nil {
+				t.Errorf("expected Next() to be nil, got %v instead", v)
+			}
+		}
+	})
+}
+
+func TestSharedCollector(t *testing.T) {
+	is := NewInfiniteStream()
+	sc := newSharedCollector(is, 2)
+
+	for i := 0; i < 100; i++ {
+		sc.Collect(values.New(i))
+		// Send a Close in the middle.
+		// This should not cause any total closure.
+		if i == 50 {
+			SendClose(sc)
+		}
+	}
+
+	for i := 0; i < 100; i++ {
+		v := is.Next()
+		if got, want := v.Int(), i; got != want {
+			t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+		}
+	}
+
+	// Can still produce/consume values normally.
+	for i := 0; i < 100; i++ {
+		sc.Collect(values.New(i))
+	}
+	for i := 0; i < 100; i++ {
+		v := is.Next()
+		if got, want := v.Int(), i; got != want {
+			t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+		}
+	}
+
+	// This should definitely close the stream.
+	SendClose(sc)
+	for i := 0; i < 100; i++ {
+		sc.Collect(values.New(i))
+	}
+
+	for i := 0; i < 100; i++ {
+		v := is.Next()
+		if v != nil {
+			t.Errorf("expected Next() to be nil, got %v instead", v)
+		}
+	}
+}
+
+func TestBroadcastCollector(t *testing.T) {
+	iss := make([]Collector, 10)
+	for i := 0; i < len(iss); i++ {
+		iss[i] = NewInfiniteStream()
+	}
+	bc := newBroadCastCollector(iss)
+
+	bc.Collect(values.New(42))
+	for i := 0; i < len(iss); i++ {
+		v := iss[i].(*infiniteStream).Next()
+		if got, want := v.Int(), 42; got != want {
+			t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+		}
+	}
+
+	SendClose(bc)
+	for i := 0; i < len(iss); i++ {
+		v := iss[i].(*infiniteStream).Next()
+		if v != nil {
+			t.Errorf("expected Next() to be nil, got %v instead", v)
+		}
+	}
+}
+
+func TestPartitionedStream(t *testing.T) {
+	defer leaktest.Check(t)()
+
+	ds := NewStreamFromElements(NewIntValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)...)
+	ks := FnKeySelector(func(v values.Value) values.Key {
+		return values.Key(v.Int() % 2)
+	})
+	ps := NewPartitionedStream(2, ks, ds, func() Transport {
+		return NewInfiniteStream()
+	})
+
+	dsp := ps.Stream(0)
+	v := dsp.Next()
+	if got, want := v.Int(), 2; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 4; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 6; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 8; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 10; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if v != nil {
+		t.Errorf("expected Next() to be nil, got %v instead", v)
+	}
+
+	dsp = ps.Stream(1)
+	v = dsp.Next()
+	if got, want := v.Int(), 1; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 3; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 5; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 7; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if got, want := v.Int(), 9; got != want {
+		t.Errorf("unexpected value -want/+got:\n\t-\t%d\n\t+\t%d", want, got)
+	}
+	v = dsp.Next()
+	if v != nil {
+		t.Errorf("expected Next() to be nil, got %v instead", v)
+	}
+}
+
 func TestParallelEngine_MultipleInputs(t *testing.T) {
 	defer leaktest.Check(t)()
 

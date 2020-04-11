@@ -21,7 +21,7 @@ func (s fixedKeySelector) GetKey(v values.Value) values.Key {
 }
 
 func (s fixedKeySelector) String() string {
-	return "fixed"
+	return "fixedKeySelector"
 }
 
 type FnKeySelector func(v values.Value) values.Key
@@ -51,7 +51,7 @@ func (s *roundRobinKeySelector) GetKey(v values.Value) values.Key {
 }
 
 func (s *roundRobinKeySelector) String() string {
-	return "roundRobin"
+	return "roundRobinKeySelector"
 }
 
 type stringValueKeySelector struct {
@@ -70,5 +70,5 @@ func (s *stringValueKeySelector) GetKey(v values.Value) values.Key {
 }
 
 func (s *stringValueKeySelector) String() string {
-	return "stringValue"
+	return "stringValueKeySelector"
 }
