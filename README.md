@@ -15,13 +15,13 @@ __TODO__
    - [x] distinguish records from different streams
    - [x] deeper testing
    - [x] word count benchmark
-   - [ ] add some simple planning
  - [ ] manage time
-   - [ ] add timestamps to records
-   - [ ] watermarks
+   - [x] add timestamps to records
+   - [x] watermarks
    - [ ] triggers
    - [ ] windows
  - [ ] abstractions on top
+ - [ ] add some simple planning
    
  
 __Optional__

@@ -58,7 +58,8 @@ func (e *Engine) Execute(ctx context.Context) error {
 			}
 			outs[from] = append(outs[from], is)
 		}
-		to.In(newDataStreams(inss...), func() Transport {
+
+		to.In(newWatermarker(newDataStreams(inss...), len(inss)), func() Transport {
 			return NewInfiniteStream()
 		})
 	}
@@ -79,6 +80,8 @@ func (e *Engine) Execute(ctx context.Context) error {
 	return werr
 }
 
+// dataStreams joins multiple streams from different sources offering a DataStream.
+// It manages tagging records with a values.Source.
 type dataStreams struct {
 	ss    []*infiniteStream
 	cases []reflect.SelectCase
@@ -115,6 +118,59 @@ func (d *dataStreams) Next() values.Value {
 		return d.Next()
 	}
 	return values.NewValueWithSource(values.Source(i), v)
+}
+
+// watermarker sets correct watermarks on timestamped values based on their source.
+// Resulting values (obtained via Next()) will have a monotonically increasing watermark equal to
+// the minimum of the watermark of the sources.
+// This makes time flow in one direction, and ensures that all sources agree on time passing.
+type watermarker struct {
+	DataStream
+	nSources int
+	wms      map[values.Source]values.Timestamp
+}
+
+func newWatermarker(dataStream DataStream, nSources int) *watermarker {
+	return &watermarker{
+		DataStream: dataStream,
+		nSources:   nSources,
+		wms:        make(map[values.Source]values.Timestamp, nSources),
+	}
+}
+
+// handleTimestamp replaces the watermark with the minimum watermark received for each source.
+// It also makes watermarks monotonically increasing for every record that passes in.
+func (w *watermarker) handleTimestamp(tsv values.TimestampedValue, source values.Source) values.TimestampedValue {
+	wm, ok := w.wms[source]
+	if !ok || tsv.Watermark() > wm {
+		wm = tsv.Watermark()
+		w.wms[source] = wm
+	}
+	minWm := wm
+	for _, wm := range w.wms {
+		if wm < minWm {
+			minWm = wm
+		}
+	}
+	return values.SetWatermark(tsv, minWm)
+}
+
+func (w *watermarker) Next() values.Value {
+	v := w.DataStream.Next()
+	if v == nil {
+		return nil
+	}
+	s := values.Source(0)
+	if _, ok := v.(values.ValueWithSource); ok {
+		s = values.GetSource(v)
+	}
+	// TODO(affo): this is not good.
+	//  one should be able to get timestamps at every level without panicking. Fix this.
+	if tsv, ok := v.Unwrap().(values.TimestampedValue); ok {
+		v = w.handleTimestamp(tsv, s)
+		v = values.NewValueWithSource(s, v)
+	}
+	return v
 }
 
 // sharedCollector de-multiplies Close signals.

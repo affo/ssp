@@ -7,6 +7,7 @@ var _ Value = (*meta)(nil)
 const (
 	_ Type = iota
 	Close
+	Watermark
 )
 
 type meta struct {

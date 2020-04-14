@@ -273,6 +273,125 @@ func TestDataStreams(t *testing.T) {
 	})
 }
 
+func TestWatermarker(t *testing.T) {
+	setup := func(nSources int) (*watermarker, []*infiniteStream, func()) {
+		iss := make([]*infiniteStream, nSources)
+		for i := 0; i < len(iss); i++ {
+			iss[i] = NewInfiniteStream()
+		}
+		return newWatermarker(newDataStreams(iss...), len(iss)), iss, func() {
+			for i := 0; i < len(iss); i++ {
+				SendClose(iss[i])
+			}
+		}
+	}
+
+	t.Run("single source", func(t *testing.T) {
+		wmer, dss, closeFn := setup(1)
+		defer closeFn()
+		ds := dss[0]
+
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
+		v := wmer.Next()
+		wantTs := values.Timestamp(0)
+		wantWm := values.Timestamp(0)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(1), values.Timestamp(0), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(1)
+		wantWm = values.Timestamp(0)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(1), values.Timestamp(1), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(1)
+		wantWm = values.Timestamp(1)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(3), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(5)
+		wantWm = values.Timestamp(3)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		// Out order watermark.
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(5)
+		wantWm = values.Timestamp(3)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(4), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(5)
+		wantWm = values.Timestamp(4)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+	})
+
+	t.Run("multi source", func(t *testing.T) {
+		wmer, dss, closeFn := setup(3)
+		defer closeFn()
+
+		dss[0].Collect(values.NewTimestampedValue(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
+		v := wmer.Next()
+		wantTs := values.Timestamp(0)
+		wantWm := values.Timestamp(0)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		dss[1].Collect(values.NewTimestampedValue(values.Timestamp(10), values.Timestamp(5), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(10)
+		wantWm = values.Timestamp(0)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+		dss[2].Collect(values.NewTimestampedValue(values.Timestamp(8), values.Timestamp(3), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(8)
+		wantWm = values.Timestamp(0)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+
+		// The "blocking" source is the first one, now it increases the watermark.
+		// We expect everyone else to update.
+		dss[0].Collect(values.NewTimestampedValue(values.Timestamp(11), values.Timestamp(10), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(11)
+		wantWm = values.Timestamp(3)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+
+		// Out order watermark.
+		dss[1].Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(5)
+		wantWm = values.Timestamp(3)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+
+		// Now the "blocking" source is the last one.
+		dss[2].Collect(values.NewTimestampedValue(values.Timestamp(9), values.Timestamp(6), values.NewNull(values.Int)))
+		v = wmer.Next()
+		wantTs = values.Timestamp(9)
+		wantWm = values.Timestamp(5)
+		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		}
+	})
+}
+
 func TestSharedCollector(t *testing.T) {
 	is := NewInfiniteStream()
 	sc := newSharedCollector(is, 2)
