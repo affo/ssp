@@ -35,44 +35,52 @@ func (l *List) AddValue(v Value) error {
 	return nil
 }
 
-func (l *List) IsNull() bool {
-	panic("implement me")
+func (l *List) Clone() Value {
+	cl := NewList(l.t)
+	for _, v := range l.vs {
+		_ = cl.AddValue(v)
+	}
+	return cl
 }
 
-func (l *List) Unwrap() Value {
-	panic("list cannot be unwrapped")
+func (l *List) IsNull() bool {
+	return false
+}
+
+func (l *List) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("list cannot be unwrapped")
 }
 
 func (l *List) Int() int {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Bool() bool {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Float32() float32 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Float64() float64 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Int16() int16 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Int32() int32 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Int64() int64 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Int8() int8 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) String() string {
@@ -80,17 +88,17 @@ func (l *List) String() string {
 }
 
 func (l *List) Uint16() uint16 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Uint32() uint32 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Uint64() uint64 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }
 
 func (l *List) Uint8() uint8 {
-	panic("implement me")
+	panic("cannot return primitive type from list")
 }

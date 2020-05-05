@@ -28,6 +28,7 @@ const (
 	Float64
 	String
 	Bool
+	Unknown
 )
 
 func (t Type) String() string {
@@ -69,7 +70,7 @@ type Value interface {
 	IsNull() bool
 	// Values are meant to be decorated.
 	// Unwrap() helps in accessing underlying values.
-	Unwrap() Value
+	Unwrap() (Value, error)
 	Int() int
 	Int8() int8
 	Int16() int16
@@ -83,6 +84,8 @@ type Value interface {
 	Float64() float64
 	String() string
 	Bool() bool
+
+	Clone() Value
 }
 
 type intValue struct {
@@ -101,8 +104,8 @@ func (v intValue) IsNull() bool {
 	return false
 }
 
-func (v intValue) Unwrap() Value {
-	panic("value of type int cannot be unwrapped")
+func (v intValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type int cannot be unwrapped")
 }
 
 func (v intValue) Int() int {
@@ -157,6 +160,10 @@ func (v intValue) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v intValue) Clone() Value {
+	return New(v.v)
+}
+
 type int8Value struct {
 	v int8
 }
@@ -173,8 +180,8 @@ func (v int8Value) IsNull() bool {
 	return false
 }
 
-func (v int8Value) Unwrap() Value {
-	panic("value of type int8 cannot be unwrapped")
+func (v int8Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type int8 cannot be unwrapped")
 }
 
 func (v int8Value) Int() int {
@@ -229,6 +236,10 @@ func (v int8Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v int8Value) Clone() Value {
+	return New(v.v)
+}
+
 type int16Value struct {
 	v int16
 }
@@ -245,8 +256,8 @@ func (v int16Value) IsNull() bool {
 	return false
 }
 
-func (v int16Value) Unwrap() Value {
-	panic("value of type int16 cannot be unwrapped")
+func (v int16Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type int16 cannot be unwrapped")
 }
 
 func (v int16Value) Int() int {
@@ -301,6 +312,10 @@ func (v int16Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v int16Value) Clone() Value {
+	return New(v.v)
+}
+
 type int32Value struct {
 	v int32
 }
@@ -317,8 +332,8 @@ func (v int32Value) IsNull() bool {
 	return false
 }
 
-func (v int32Value) Unwrap() Value {
-	panic("value of type int32 cannot be unwrapped")
+func (v int32Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type int32 cannot be unwrapped")
 }
 
 func (v int32Value) Int() int {
@@ -373,6 +388,10 @@ func (v int32Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v int32Value) Clone() Value {
+	return New(v.v)
+}
+
 type int64Value struct {
 	v int64
 }
@@ -389,8 +408,8 @@ func (v int64Value) IsNull() bool {
 	return false
 }
 
-func (v int64Value) Unwrap() Value {
-	panic("value of type int64 cannot be unwrapped")
+func (v int64Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type int64 cannot be unwrapped")
 }
 
 func (v int64Value) Int() int {
@@ -445,6 +464,10 @@ func (v int64Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v int64Value) Clone() Value {
+	return New(v.v)
+}
+
 type uint8Value struct {
 	v uint8
 }
@@ -461,8 +484,8 @@ func (v uint8Value) IsNull() bool {
 	return false
 }
 
-func (v uint8Value) Unwrap() Value {
-	panic("value of type uint8 cannot be unwrapped")
+func (v uint8Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type uint8 cannot be unwrapped")
 }
 
 func (v uint8Value) Int() int {
@@ -517,6 +540,10 @@ func (v uint8Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v uint8Value) Clone() Value {
+	return New(v.v)
+}
+
 type uint16Value struct {
 	v uint16
 }
@@ -533,8 +560,8 @@ func (v uint16Value) IsNull() bool {
 	return false
 }
 
-func (v uint16Value) Unwrap() Value {
-	panic("value of type uint16 cannot be unwrapped")
+func (v uint16Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type uint16 cannot be unwrapped")
 }
 
 func (v uint16Value) Int() int {
@@ -589,6 +616,10 @@ func (v uint16Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v uint16Value) Clone() Value {
+	return New(v.v)
+}
+
 type uint32Value struct {
 	v uint32
 }
@@ -605,8 +636,8 @@ func (v uint32Value) IsNull() bool {
 	return false
 }
 
-func (v uint32Value) Unwrap() Value {
-	panic("value of type uint32 cannot be unwrapped")
+func (v uint32Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type uint32 cannot be unwrapped")
 }
 
 func (v uint32Value) Int() int {
@@ -661,6 +692,10 @@ func (v uint32Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v uint32Value) Clone() Value {
+	return New(v.v)
+}
+
 type uint64Value struct {
 	v uint64
 }
@@ -677,8 +712,8 @@ func (v uint64Value) IsNull() bool {
 	return false
 }
 
-func (v uint64Value) Unwrap() Value {
-	panic("value of type uint64 cannot be unwrapped")
+func (v uint64Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type uint64 cannot be unwrapped")
 }
 
 func (v uint64Value) Int() int {
@@ -733,6 +768,10 @@ func (v uint64Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v uint64Value) Clone() Value {
+	return New(v.v)
+}
+
 type float32Value struct {
 	v float32
 }
@@ -749,8 +788,8 @@ func (v float32Value) IsNull() bool {
 	return false
 }
 
-func (v float32Value) Unwrap() Value {
-	panic("value of type float32 cannot be unwrapped")
+func (v float32Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type float32 cannot be unwrapped")
 }
 
 func (v float32Value) Int() int {
@@ -805,6 +844,10 @@ func (v float32Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v float32Value) Clone() Value {
+	return New(v.v)
+}
+
 type float64Value struct {
 	v float64
 }
@@ -821,8 +864,8 @@ func (v float64Value) IsNull() bool {
 	return false
 }
 
-func (v float64Value) Unwrap() Value {
-	panic("value of type float64 cannot be unwrapped")
+func (v float64Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type float64 cannot be unwrapped")
 }
 
 func (v float64Value) Int() int {
@@ -877,6 +920,10 @@ func (v float64Value) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v float64Value) Clone() Value {
+	return New(v.v)
+}
+
 type stringValue struct {
 	v string
 }
@@ -893,8 +940,8 @@ func (v stringValue) IsNull() bool {
 	return false
 }
 
-func (v stringValue) Unwrap() Value {
-	panic("value of type string cannot be unwrapped")
+func (v stringValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type string cannot be unwrapped")
 }
 
 func (v stringValue) Int() int {
@@ -949,6 +996,10 @@ func (v stringValue) String() string {
 	return fmt.Sprintf("%v", v.Get())
 }
 
+func (v stringValue) Clone() Value {
+	return New(v.v)
+}
+
 type boolValue struct {
 	v bool
 }
@@ -965,8 +1016,8 @@ func (v boolValue) IsNull() bool {
 	return false
 }
 
-func (v boolValue) Unwrap() Value {
-	panic("value of type bool cannot be unwrapped")
+func (v boolValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type bool cannot be unwrapped")
 }
 
 func (v boolValue) Int() int {
@@ -1019,6 +1070,10 @@ func (v boolValue) Bool() bool {
 
 func (v boolValue) String() string {
 	return fmt.Sprintf("%v", v.Get())
+}
+
+func (v boolValue) Clone() Value {
+	return New(v.v)
 }
 
 func New(v interface{}) Value {
@@ -1077,8 +1132,8 @@ func (v nullValue) IsNull() bool {
 	return true
 }
 
-func (v nullValue) Unwrap() Value {
-	panic("null value cannot be unwrapped")
+func (v nullValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("null value cannot be unwrapped")
 }
 
 func (v nullValue) Int() int {
@@ -1129,6 +1184,10 @@ func (v nullValue) Bool() bool {
 	panic("cannot get bool out of null value")
 }
 
+func (v nullValue) Clone() Value {
+	return NewNull(v.t)
+}
+
 func (v nullValue) String() string {
 	return fmt.Sprintf("nil(%v)", v.t)
 }
@@ -1149,8 +1208,8 @@ func (v goObjectValue) IsNull() bool {
 	return true
 }
 
-func (v goObjectValue) Unwrap() Value {
-	panic("object value cannot be unwrapped")
+func (v goObjectValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("object value cannot be unwrapped")
 }
 
 func (v goObjectValue) Int() int {
@@ -1203,4 +1262,8 @@ func (v goObjectValue) Bool() bool {
 
 func (v goObjectValue) String() string {
 	return fmt.Sprintf("%v", v.v)
+}
+
+func (v goObjectValue) Clone() Value {
+	return New(v.v)
 }

@@ -7,7 +7,7 @@ __TODO__
  - [x] graph builder lib
  - [x] walk graph
  - [x] abstractions on top
- - [ ] serious engine
+ - [x] serious engine
    - [x] parallel operators
    - [x] partitioned streams
    - [x] remove type checks and input stream check
@@ -15,19 +15,76 @@ __TODO__
    - [x] distinguish records from different streams
    - [x] deeper testing
    - [x] word count benchmark
- - [ ] manage time
+ - [x] manage time
    - [x] add timestamps to records
    - [x] watermarks
-   - [ ] triggers
-   - [ ] windows
+   - [x] windows
  - [ ] abstractions on top
  - [ ] add some simple planning
+
+__Known Issues__
+
+ - __Watermarks__ are _global_, but windows close on a _per-key_ basis.  
+   This means that any value for any key/source sets a global watermark in an operator, but propagates only once records enter nodes!  
+   This means that we have some difficulty in understanding what happens, especially for out-of-order values.  
+   For example:
    
+   ```
+   Window: size 5, slide 2.
+   Watermark: fixed offset 5.
+   
+   Windows: [0,  5), [2, 7), [4, 9), [6, 11), [8, 13), [10, 15), [12, 17), ...
+   
+   Records:
+   {ts: 2, value: "buz"}
+   {ts: 13, value: "bar"}
+   {ts: 3, value: "buz"}
+   {ts: 10, value: "buz"}
+   
+   Output: count of values per window.
+   ```
+   
+   Record `13` will make the watermark for the `WindowNode` advance to `8` and, in theory, close `[0,  5), [2, 7)`.
+   The watermark will advance both for `bar` and `buz`, but it will propagate to `buz` only when `3` gets processed.  
+   Thus, the result will be:
+   
+   ```
+   [0, 5) - buz: 2
+   [2, 7) - buz: 2
+   ...
+   ```
+   
+   If the input, instead, is:
+   
+   ```
+   {ts: 2, value: "buz"}
+   {ts: 13, value: "bar"}
+   {ts: 10, value: "buz"}
+   {ts: 3, value: "buz"}
+   ```
+   
+   So, the output will be:
+   
+   ```
+   [0, 5) - buz: 1
+   [0, 5) - buz: 1
+   [2, 7) - buz: 1
+   ...
+   ```
+   
+   Because `10` will make `buz` aware of the `8` watermark and close `[0, 5)` without adding `3`.
+   
+   The goal is to make the two outputs be consistent.
+   
+ - `FixedWindowManager` stores windows in a `map`.  
+   This makes iteration non-deterministic and makes some tests flaky.
+   For example, we cannot determine the order in which windows close (the close function gets called).
  
 __Optional__
 
  - [ ] generate graph as command?
  - [ ] multiple outputs for nodes (with tags?)
+ - [ ] custom triggers (time)
  
 ## Code Examples
 

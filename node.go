@@ -16,15 +16,42 @@ type Node interface {
 	GetName() string
 }
 
+type baseNode struct {
+	par  int
+	name string
+}
+
+func newBaseNode() baseNode {
+	return baseNode{par: 1}
+}
+
+func (n baseNode) GetParallelism() int {
+	return n.par
+}
+
+func (n baseNode) GetName() string {
+	return n.name
+}
+
+func (n baseNode) String() string {
+	return n.name
+}
+
+func (n baseNode) Clone() baseNode {
+	return baseNode{
+		par:  n.par,
+		name: n.name,
+	}
+}
+
 type NodeFunc func(state values.Value, collector Collector, v values.Value) (values.Value, error)
 
 type AnonymousNode struct {
+	baseNode
+
 	state0 values.Value
 	state  values.Value
 	do     NodeFunc
-
-	par  int
-	name string
 }
 
 func NewNode(do func(collector Collector, v values.Value) error) *AnonymousNode {
@@ -38,10 +65,10 @@ func NewNode(do func(collector Collector, v values.Value) error) *AnonymousNode 
 
 func NewStatefulNode(state0 values.Value, do NodeFunc) *AnonymousNode {
 	return &AnonymousNode{
-		state0: state0,
-		state:  state0,
-		do:     do,
-		par:    1,
+		baseNode: newBaseNode(),
+		state0:   state0,
+		state:    state0,
+		do:       do,
 	}
 }
 
@@ -58,36 +85,23 @@ func (n *AnonymousNode) Out() *Arch {
 	return NewLink(n)
 }
 
-func (n *AnonymousNode) Clone() Node {
-	return &AnonymousNode{
-		state0: n.state0,
-		state:  n.state0,
-		do:     n.do,
-		par:    n.par,
-		name:   n.name,
-	}
-}
-
 func (n *AnonymousNode) SetParallelism(par int) Node {
-	n.par = par
+	n.baseNode.par = par
 	return n
-}
-
-func (n *AnonymousNode) GetParallelism() int {
-	return n.par
 }
 
 func (n *AnonymousNode) SetName(name string) Node {
-	n.name = name
+	n.baseNode.name = name
 	return n
 }
 
-func (n *AnonymousNode) GetName() string {
-	return n.name
-}
-
-func (n *AnonymousNode) String() string {
-	return n.name
+func (n *AnonymousNode) Clone() Node {
+	return &AnonymousNode{
+		baseNode: n.baseNode.Clone(),
+		state0:   n.state0,
+		state:    n.state0,
+		do:       n.do,
+	}
 }
 
 func NewLogSink(t values.Type) (Node, *values.List) {

@@ -117,7 +117,7 @@ func (d *dataStreams) Next() values.Value {
 		atomic.AddInt64(&d.n, -1)
 		return d.Next()
 	}
-	return values.NewValueWithSource(values.Source(i), v)
+	return values.SetSource(values.Source(i), v)
 }
 
 // watermarker sets correct watermarks on timestamped values based on their source.
@@ -140,7 +140,7 @@ func newWatermarker(dataStream DataStream, nSources int) *watermarker {
 
 // handleTimestamp replaces the watermark with the minimum watermark received for each source.
 // It also makes watermarks monotonically increasing for every record that passes in.
-func (w *watermarker) handleTimestamp(tsv values.TimestampedValue, source values.Source) values.TimestampedValue {
+func (w *watermarker) handleTimestamp(tsv values.TimestampedValue, source values.Source) values.Value {
 	wm, ok := w.wms[source]
 	if !ok || tsv.Watermark() > wm {
 		wm = tsv.Watermark()
@@ -152,7 +152,7 @@ func (w *watermarker) handleTimestamp(tsv values.TimestampedValue, source values
 			minWm = wm
 		}
 	}
-	return values.SetWatermark(tsv, minWm)
+	return values.SetTime(tsv.Timestamp(), minWm, tsv)
 }
 
 func (w *watermarker) Next() values.Value {
@@ -160,15 +160,12 @@ func (w *watermarker) Next() values.Value {
 	if v == nil {
 		return nil
 	}
-	s := values.Source(0)
-	if _, ok := v.(values.ValueWithSource); ok {
-		s = values.GetSource(v)
+	s, err := values.GetSource(v)
+	if err != nil {
+		s = values.Source(0)
 	}
-	// TODO(affo): this is not good.
-	//  one should be able to get timestamps at every level without panicking. Fix this.
-	if tsv, ok := v.Unwrap().(values.TimestampedValue); ok {
+	if tsv, err := values.GetTimestampedValue(v); err == nil {
 		v = w.handleTimestamp(tsv, s)
-		v = values.NewValueWithSource(s, v)
 	}
 	return v
 }
@@ -257,7 +254,11 @@ func (o *Operator) do() error {
 		if v == nil {
 			return nil
 		}
-		n := o.getNode(values.GetKey(v))
+		k, err := values.GetKey(v)
+		if err != nil {
+			return err
+		}
+		n := o.getNode(k)
 		if err := n.Do(o.out, v); err != nil {
 			return err
 		}
@@ -374,8 +375,8 @@ func (s *partitionedStream) do() {
 	for v := s.ds.Next(); v != nil; v = s.ds.Next() {
 		// Apply new keying.
 		k := s.ks.GetKey(v)
-		kv := values.NewKeyedValue(k, v)
-		i := uint64(kv.Key()) % uint64(len(s.ts))
+		kv := values.SetKey(k, v)
+		i := uint64(k) % uint64(len(s.ts))
 		t := s.ts[i]
 		t.Collect(kv)
 	}

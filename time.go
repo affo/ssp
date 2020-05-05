@@ -10,10 +10,10 @@ type TimestampExtractor interface {
 
 type TimestampExtractorFn func(v values.Value) (ts values.Timestamp, wm values.Timestamp)
 
-func AssignTimestamp(tse TimestampExtractor) Node {
+func AssignTimestamp(tse TimestampExtractorFn) Node {
 	return NewNode(func(collector Collector, v values.Value) error {
-		ts, wm := tse.ExtractTime(v)
-		collector.Collect(values.NewTimestampedValue(ts, wm, v))
+		ts, wm := tse(v)
+		collector.Collect(values.SetTime(ts, wm, v))
 		return nil
 	})
 }

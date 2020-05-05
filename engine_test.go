@@ -33,10 +33,10 @@ func TestOperator(t *testing.T) {
 	}()
 
 	// Must set a key, even if useless.
-	in.Collect(values.NewKeyedValue(0, values.New("hello")))
-	in.Collect(values.NewKeyedValue(0, values.New("this")))
-	in.Collect(values.NewKeyedValue(0, values.New("is")))
-	in.Collect(values.NewKeyedValue(0, values.New("ssp")))
+	in.Collect(values.SetKey(0, values.New("hello")))
+	in.Collect(values.SetKey(0, values.New("this")))
+	in.Collect(values.SetKey(0, values.New("is")))
+	in.Collect(values.SetKey(0, values.New("ssp")))
 	SendClose(in)
 
 	want := []string{"HELLO", "THIS", "IS", "SSP"}
@@ -239,7 +239,8 @@ func TestDataStreams(t *testing.T) {
 
 		for i := 0; i < ns; i++ {
 			v := dss.Next()
-			if val, source := v.Int(), int(values.GetSource(v)); val != source {
+			source, _ := values.GetSource(v)
+			if val, source := v.Int(), int(source); val != source {
 				t.Errorf("unexpected val/source: %d/%d", val, source)
 			}
 		}
@@ -259,7 +260,8 @@ func TestDataStreams(t *testing.T) {
 
 		for i := 0; i < ns; i++ {
 			v := dss.Next()
-			if val, source := v.Int(), int(values.GetSource(v)); val != source {
+			source, _ := values.GetSource(v)
+			if val, source := v.Int(), int(source); val != source {
 				t.Errorf("unexpected val/source: %d/%d", val, source)
 			}
 		}
@@ -291,48 +293,48 @@ func TestWatermarker(t *testing.T) {
 		defer closeFn()
 		ds := dss[0]
 
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
 		v := wmer.Next()
 		wantTs := values.Timestamp(0)
 		wantWm := values.Timestamp(0)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(1), values.Timestamp(0), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(1), values.Timestamp(0), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(1)
 		wantWm = values.Timestamp(0)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(1), values.Timestamp(1), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(1), values.Timestamp(1), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(1)
 		wantWm = values.Timestamp(1)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(3), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(5), values.Timestamp(3), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(5)
 		wantWm = values.Timestamp(3)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 		// Out order watermark.
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(5)
 		wantWm = values.Timestamp(3)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		ds.Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(4), values.NewNull(values.Int)))
+		ds.Collect(values.SetTime(values.Timestamp(5), values.Timestamp(4), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(5)
 		wantWm = values.Timestamp(4)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 	})
 
@@ -340,54 +342,54 @@ func TestWatermarker(t *testing.T) {
 		wmer, dss, closeFn := setup(3)
 		defer closeFn()
 
-		dss[0].Collect(values.NewTimestampedValue(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
+		dss[0].Collect(values.SetTime(values.Timestamp(0), values.Timestamp(0), values.NewNull(values.Int)))
 		v := wmer.Next()
 		wantTs := values.Timestamp(0)
 		wantWm := values.Timestamp(0)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		dss[1].Collect(values.NewTimestampedValue(values.Timestamp(10), values.Timestamp(5), values.NewNull(values.Int)))
+		dss[1].Collect(values.SetTime(values.Timestamp(10), values.Timestamp(5), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(10)
 		wantWm = values.Timestamp(0)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
-		dss[2].Collect(values.NewTimestampedValue(values.Timestamp(8), values.Timestamp(3), values.NewNull(values.Int)))
+		dss[2].Collect(values.SetTime(values.Timestamp(8), values.Timestamp(3), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(8)
 		wantWm = values.Timestamp(0)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 
 		// The "blocking" source is the first one, now it increases the watermark.
 		// We expect everyone else to update.
-		dss[0].Collect(values.NewTimestampedValue(values.Timestamp(11), values.Timestamp(10), values.NewNull(values.Int)))
+		dss[0].Collect(values.SetTime(values.Timestamp(11), values.Timestamp(10), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(11)
 		wantWm = values.Timestamp(3)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 
 		// Out order watermark.
-		dss[1].Collect(values.NewTimestampedValue(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
+		dss[1].Collect(values.SetTime(values.Timestamp(5), values.Timestamp(0), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(5)
 		wantWm = values.Timestamp(3)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 
 		// Now the "blocking" source is the last one.
-		dss[2].Collect(values.NewTimestampedValue(values.Timestamp(9), values.Timestamp(6), values.NewNull(values.Int)))
+		dss[2].Collect(values.SetTime(values.Timestamp(9), values.Timestamp(6), values.NewNull(values.Int)))
 		v = wmer.Next()
 		wantTs = values.Timestamp(9)
 		wantWm = values.Timestamp(5)
-		if ts, wm := values.GetTime(v); ts != wantTs || wm != wantWm {
-			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d", wantTs, wantWm, ts, wm)
+		if ts, wm, err := values.GetTime(v); ts != wantTs || wm != wantWm || err != nil {
+			t.Errorf("unexpected ts/wm: want: %d/%d, got: %d/%d, err: %v", wantTs, wantWm, ts, wm, err)
 		}
 	})
 }
@@ -560,7 +562,10 @@ func TestParallelEngine_MultipleInputs(t *testing.T) {
 	}
 	align := NewStatefulNode(values.New(&state{}), func(sv values.Value, collector Collector, v values.Value) (values.Value, error) {
 		s := sv.Get().(*state)
-		source := values.GetSource(v)
+		source, err := values.GetSource(v)
+		if err != nil {
+			return nil, err
+		}
 		if source == 0 {
 			if len(s.s2) > 0 {
 				ov := s.s2[0]
@@ -596,6 +601,136 @@ func TestParallelEngine_MultipleInputs(t *testing.T) {
 		"THIS: 4",
 		"IS: 2",
 		"SSP: 3",
+	}
+	var got []string
+	for _, v := range log.GetValues() {
+		got = append(got, v.String())
+	}
+	sort.Strings(want)
+	sort.Strings(got)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("unexpected result -want/+got:\n\t%s", diff)
+	}
+}
+
+func TestParallelEngine_Windows(t *testing.T) {
+	defer leaktest.Check(t)()
+
+	type record struct {
+		ts    values.Timestamp
+		value string
+	}
+	type wState struct {
+		key      values.Key
+		keyValue string
+		count    int
+	}
+
+	sink, log := NewLogSink(values.String)
+	ctx := Context()
+	NewNode(func(collector Collector, _ values.Value) error {
+		in := []record{
+			{ts: 1, value: "foo"},
+			{ts: 1, value: "foo"},
+			{ts: 2, value: "foo"},
+			{ts: 8, value: "foo"},
+			{ts: 5, value: "foo"},
+			{ts: 5, value: "buz"},
+			{ts: 5, value: "buz"},
+			{ts: 7, value: "buz"},
+			{ts: 6, value: "buz"},
+			{ts: 10, value: "foo"},
+			{ts: 10, value: "bar"},
+			{ts: 10, value: "buz"},
+			{ts: 2, value: "foo"}, // out of order.
+			{ts: 13, value: "bar"},
+			{ts: 15, value: "buz"},
+			{ts: 3, value: "buz"}, // out of order.
+			{ts: 31, value: "foo"},
+			{ts: 31, value: "bar"},
+			{ts: 30, value: "foo"},
+			{ts: 20, value: "bar"},  // out of order.
+			{ts: 100, value: "foo"}, // trigger the rest.
+			{ts: 100, value: "bar"}, // trigger the rest.
+			{ts: 100, value: "buz"}, // trigger the rest.
+		}
+		for _, v := range in {
+			collector.Collect(values.New(v))
+		}
+		return nil
+	}).SetName("source").
+		Out().
+		Connect(ctx, AssignTimestamp(func(v values.Value) (ts values.Timestamp, wm values.Timestamp) {
+			r := v.Get().(record)
+			// Fixed delay.
+			return r.ts, r.ts - 5
+		})).SetName("timestampExtractor").
+		Out().
+		KeyBy(NewStringValueKeySelector(func(v values.Value) string {
+			return v.Get().(record).value
+		})).
+		Connect(ctx, NewWindowedNode(
+			5, 2, values.New(wState{}),
+			func(w *Window, collector Collector, v values.TimestampedValue) error {
+				s := w.State.Get().(wState)
+				key, err := values.GetKey(v)
+				if err != nil {
+					return err
+				}
+				s.key = key
+				s.keyValue = v.Get().(record).value
+				s.count++
+				w.State = values.New(s)
+				return nil
+			},
+			func(w *Window, collector Collector) error {
+				s := w.State.Get().(wState)
+				collector.Collect(values.New(fmt.Sprintf("%v: %s - %d", w, s.keyValue, s.count)))
+				return nil
+			})).
+		SetName("windowedWordCounter").
+		SetParallelism(4).
+		Out().
+		Connect(ctx, sink.SetName("sink"))
+
+	if err := Execute(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		// foo's ts: 1 1 2 5 8 10 (2) 30 31 100.
+		"[0, 5): foo - 3",
+		"[2, 7): foo - 3",
+		"[0, 5): foo - 1", // caused by {ts: 2, value: "foo"}.
+		"[4, 9): foo - 2",
+		"[6, 11): foo - 2",
+		"[8, 13): foo - 2",
+		"[10, 15): foo - 1",
+		"[26, 31): foo - 1",
+		"[28, 33): foo - 2",
+		"[30, 35): foo - 2",
+
+		// bar's ts: 10 13 31 (20) 100.
+		"[6, 11): bar - 1",
+		"[8, 13): bar - 1",
+		"[10, 15): bar - 2",
+		"[12, 17): bar - 1",
+		"[28, 33): bar - 1",
+		"[30, 35): bar - 1",
+		"[16, 21): bar - 1", // caused by {ts: 20, value: "bar"}.
+		"[18, 23): bar - 1", // caused by {ts: 20, value: "bar"}.
+		"[20, 25): bar - 1", // caused by {ts: 20, value: "bar"}.
+
+		// buz's ts: 5 5 6 7 10 15 (3) 100.
+		"[2, 7): buz - 3",
+		"[4, 9): buz - 4",
+		"[6, 11): buz - 3",
+		"[8, 13): buz - 1",
+		"[10, 15): buz - 1",
+		"[12, 17): buz - 1",
+		"[14, 19): buz - 1",
+		"[0, 5): buz - 1", // caused by {ts: 3, value: "buz"}.
+		"[2, 7): buz - 1", // caused by {ts: 3, value: "buz"}.
 	}
 	var got []string
 	for _, v := range log.GetValues() {

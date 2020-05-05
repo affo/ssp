@@ -5,9 +5,8 @@ import "fmt"
 var _ Value = (*meta)(nil)
 
 const (
-	_ Type = iota
+	_ Type = Unknown
 	Close
-	Watermark
 )
 
 type meta struct {
@@ -25,47 +24,51 @@ func (m meta) Type() Type {
 }
 
 func (m meta) Get() interface{} {
-	panic("implement me")
+	panic("cannot return interface{} from meta value")
 }
 
 func (m meta) IsNull() bool {
-	panic("implement me")
+	return false
 }
 
-func (m meta) Unwrap() Value {
-	panic("list cannot be unwrapped")
+func (m meta) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("meta value cannot be unwrapped")
+}
+
+func (m meta) Clone() Value {
+	return NewMeta(m.t)
 }
 
 func (m meta) Int() int {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Bool() bool {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Float32() float32 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Float64() float64 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Int16() int16 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Int32() int32 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Int64() int64 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Int8() int8 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) String() string {
@@ -73,17 +76,17 @@ func (m meta) String() string {
 }
 
 func (m meta) Uint16() uint16 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Uint32() uint32 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Uint64() uint64 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }
 
 func (m meta) Uint8() uint8 {
-	panic("implement me")
+	panic("cannot return primitive type from meta value")
 }

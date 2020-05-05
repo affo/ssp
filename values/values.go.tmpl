@@ -11,7 +11,8 @@ const (
   Object
 	{{range . -}}
     {{- title .}}
-  {{end}}
+  {{end -}}
+  Unknown
 )
 
 func (t Type) String() string {
@@ -31,10 +32,11 @@ type Value interface {
 	IsNull() bool
 	// Values are meant to be decorated.
 	// Unwrap() helps in accessing underlying values.
-	Unwrap() Value
+	Unwrap() (Value, error)
 	{{range . -}}
     {{title .}}() {{.}}
   {{end}}
+  Clone() Value
 }
 
 {{range $t := . -}}
@@ -54,8 +56,8 @@ func (v {{$t}}Value) IsNull() bool {
   return false
 }
 
-func (v {{$t}}Value) Unwrap() Value {
-	panic("value of type {{$t}} cannot be unwrapped")
+func (v {{$t}}Value) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("value of type {{$t}} cannot be unwrapped")
 }
 
 {{range $tt := $}}
@@ -72,6 +74,10 @@ func (v {{$t}}Value) {{title $tt}}() {{$tt}} {
 
 func (v {{$t}}Value) String() string {
   return fmt.Sprintf("%v", v.Get())
+}
+
+func (v {{$t}}Value) Clone() Value {
+  return New(v.v)
 }
 {{end}}
 
@@ -109,8 +115,8 @@ func (v nullValue) IsNull() bool {
 	return true
 }
 
-func (v nullValue) Unwrap() Value {
-	panic("null value cannot be unwrapped")
+func (v nullValue) Unwrap() (Value, error) {
+  return nil, fmt.Errorf("null value cannot be unwrapped")
 }
 
 {{range .}}
@@ -120,6 +126,10 @@ func (v nullValue) {{title .}}() {{.}} {
 }
 {{end}}
 {{end}}
+
+func (v nullValue) Clone() Value {
+  return NewNull(v.t)
+}
 
 func (v nullValue) String() string {
 	return fmt.Sprintf("nil(%v)", v.t)
@@ -141,8 +151,8 @@ func (v goObjectValue) IsNull() bool {
 	return true
 }
 
-func (v goObjectValue) Unwrap() Value {
-	panic("object value cannot be unwrapped")
+func (v goObjectValue) Unwrap() (Value, error) {
+	return nil, fmt.Errorf("object value cannot be unwrapped")
 }
 
 {{range .}}
@@ -155,4 +165,8 @@ func (v goObjectValue) {{title .}}() {{.}} {
 
 func (v goObjectValue) String() string {
 	return fmt.Sprintf("%v", v.v)
+}
+
+func (v goObjectValue) Clone() Value {
+  return New(v.v)
 }
